@@ -1,0 +1,15 @@
+#!/bin/sh
+# Stand-in for ssh used by the host integration test: drops ssh options and the
+# host name, then runs the remote command locally from $HOME, like sshd would.
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o | -p | -i | -l | -J) shift 2 ;;
+    -G) exit 0 ;;
+    -*) shift ;;
+    *) break ;;
+  esac
+done
+shift # host
+cd "$HOME" || exit 255
+if [ $# -eq 0 ]; then exec sh; fi
+exec sh -c "$*"
