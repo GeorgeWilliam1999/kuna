@@ -241,6 +241,8 @@ app.whenReady().then(async () => {
   const allowed = (permission: string): boolean => permission === 'notifications'
   session.defaultSession.setPermissionRequestHandler((_wc, permission, done) => done(allowed(permission)))
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => allowed(permission))
+  // a built Kuna.app has its icon; running from source, the Dock shows Electron's otherwise
+  if (fromSource) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
   registerIpc()
   buildMenu()
   createWindow()

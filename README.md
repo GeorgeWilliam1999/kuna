@@ -1,6 +1,10 @@
+<p align="center"><img src="build/icon.png" width="128" alt="Kuna's icon: a marten biting through the LHC ring"></p>
+
 # Kuna
 
 A keyboard-first control room for long-running coding agents — on your Mac or on any machine in your `~/.ssh/config`.
+
+*Kuna* is Slovak for marten; in 2016 one got into a transformer at CERN and stopped the LHC.
 
 ![Four Claude Code agents in a 2×2 grid with the sidebar and inspector](docs/images/doc-main.png)
 

@@ -28,7 +28,8 @@
       "target": [
         "dir"
       ],
-      "identity": null
+      "identity": null,
+      "icon": "build/icon.icns"
     },
     "electronFuses": {
       "runAsNode": false,
@@ -45,7 +46,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "rebuild": "electron-rebuild -f -w node-pty",
-    "postinstall": "electron-rebuild -f -w node-pty",
+    "postinstall": "electron-rebuild -f -w node-pty && sh scripts/dev-app.sh",
+    "icon": "sh scripts/make-icon.sh",
     "dist": "electron-vite build && electron-builder --mac --dir"
   },
   "dependencies": {
