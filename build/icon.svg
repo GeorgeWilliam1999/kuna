@@ -1,76 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <!-- Kuna: a marten (kuna, in Slovak) biting through the LHC ring. -->
   <defs>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="14"/>
-    </filter>
-    <filter id="bolt-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur stdDeviation="12"/>
-    </filter>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="bglow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="10"/></filter>
   </defs>
-
   <rect x="100" y="100" width="824" height="824" rx="186" fill="#000"/>
-
-  <g transform="translate(-28 0)">
-    <!-- the ring, bitten through at the upper right -->
-    <g transform="rotate(-21 540 600)">
-      <circle cx="540" cy="600" r="180" fill="none" stroke="#3d7bff" stroke-width="56" stroke-dasharray="1052 79" opacity="0.6" filter="url(#glow)"/>
-      <circle cx="540" cy="600" r="180" fill="none" stroke="#4d8dff" stroke-width="46" stroke-dasharray="1052 79"/>
-      <circle cx="540" cy="600" r="180" fill="none" stroke="#bcd4ff" stroke-width="5" stroke-dasharray="1052 79" opacity="0.85"/>
-    </g>
-
-    <!-- lightning out of the cut -->
-    <g transform="translate(706 500) rotate(-24)">
-      <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffae00" opacity="0.85" filter="url(#bolt-glow)"/>
-      <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffd84a"/>
-      <path d="M16 -52 L-10 2 L8 2 L0 34 L20 -8 L4 -8 L18 -52 Z" fill="#fff6d0"/>
-    </g>
-
-    <!-- the marten on top of the ring, jaws on the cut end: drawn facing right on y=0, then placed -->
-    <g transform="translate(421 435) rotate(-5) scale(1.1) translate(-29 0)">
-      <!-- far legs -->
-      <path d="M176 -40 C180 -26 184 -14 186 -6 C186 -2 188 0 192 0 L210 0 C214 0 214 -6 208 -8 L202 -10 C200 -20 200 -30 200 -36 Z" fill="#5c3415" transform="translate(-34 0)"/>
-      <path d="M40 -52 C58 -58 76 -56 84 -48 C80 -38 72 -30 64 -26 C62 -18 62 -10 64 -4 C66 -2 68 0 70 0 L46 0 C44 -8 44 -16 46 -24 C34 -30 32 -42 40 -52 Z" fill="#5c3415"/>
-      <!-- tail, held out behind -->
-      <path d="M-12 -104 C-52 -126 -98 -134 -132 -152 C-152 -162 -164 -180 -158 -202 C-178 -194 -190 -168 -180 -146 C-166 -118 -116 -96 -60 -86 C-40 -82 -28 -84 -22 -88 Z" fill="#8c4f21"/>
-      <!-- body and neck: slim, the chest running down to the front legs and the throat -->
-      <path d="M-15 -100
-               C10 -118 50 -128 90 -128
-               C128 -128 160 -120 182 -110
-               C210 -96 232 -78 244 -58
-               C250 -46 248 -34 240 -24
-               C230 -18 216 -18 204 -22
-               C192 -26 178 -36 162 -46
-               C140 -60 118 -64 96 -64
-               C66 -64 38 -60 14 -56
-               C-10 -58 -26 -72 -26 -88
-               C-24 -94 -20 -98 -15 -100 Z" fill="#c27d40"/>
-      <!-- light along the back -->
-      <path d="M-12 -100 C18 -118 58 -125 94 -125 C132 -125 160 -116 184 -106" fill="none" stroke="#e3a86c" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
-      <!-- near legs -->
-      <path d="M194 -44 C198 -30 200 -16 202 -6 C202 -2 204 0 208 0 L228 0 C233 0 233 -6 228 -8 L222 -10 C220 -18 220 -24 220 -30 C210 -34 200 -38 194 -44 Z" fill="#8c4f21" transform="translate(-30 -2)"/>
-      <path d="M2 -58 C22 -64 44 -62 56 -54 C52 -42 42 -34 32 -30 C30 -20 30 -12 32 -6 C33 -2 35 0 38 0 L16 0 C13 0 12 -4 13 -8 C14 -14 15 -20 16 -26 C2 -32 -4 -44 2 -58 Z" fill="#8c4f21"/>
-      <!-- head, bent down, the cut end between its jaws (drawn facing +x, then turned) -->
-      <g transform="translate(225.3 -16.2) rotate(45) scale(1.3)">
-        <path d="M-32 -4
-                 C-28 -20 -14 -27 2 -26
-                 C18 -25 32 -18 44 -10
-                 C52 -6 60 -3 61 1
-                 C60 4 55 6 49 6
-                 L36 6
-                 C41 9 46 12 48 14
-                 C40 17 28 17 16 15
-                 C2 13 -16 10 -28 6 Z" fill="#c27d40"/>
-        <!-- bib along the throat -->
-        <path d="M16 15 C2 13 -16 10 -28 6 C-28 11 -24 15 -16 17 C-2 19 8 19 16 15 Z" fill="#f5e3b8"/>
-        <!-- ear -->
-        <path d="M-24 -16 C-38 -27 -36 -45 -22 -46 C-13 -41 -10 -30 -12 -21 Z" fill="#9a5c2a"/>
-        <path d="M-22 -20 C-32 -28 -31 -40 -21 -41 C-15 -37 -13 -30 -15 -24 Z" fill="#f0d6a2"/>
-        <!-- eye and nose -->
-        <circle cx="18" cy="-12" r="4.6" fill="#120a04"/>
-        <circle cx="19.5" cy="-13.5" r="1.5" fill="#fff"/>
-        <circle cx="59" cy="1" r="4.2" fill="#120a04"/>
-      </g>
-    </g>
+  <g transform="translate(542.0 460.0) scale(1.16) translate(-512 -512)">
+  <!-- the LHC ring, bitten through at the upper right -->
+  <path d="M668.0 502.5 A184.0 184.0 0 1 1 598.4 437.5" fill="none" stroke="#2f6bff" stroke-width="76.0" opacity="0.55" filter="url(#glow)"/>
+  <path d="M668.0 502.5 A184.0 184.0 0 1 1 598.4 437.5" fill="none" stroke="#4d8dff" stroke-width="60.0"/>
+  <path d="M668.0 502.5 A184.0 184.0 0 1 1 598.4 437.5" fill="none" stroke="#c4daff" stroke-width="7" opacity="0.9"/>
+  <!-- the marten (stone marten: pale bib, pale-rimmed ears, darker legs and bushy tail), arched over the ring -->
+  <path d="M 294.1 438.9 C 305.2 452.2 319.7 464.9 333.5 470.3 C 340.4 473.2 345.2 474.7 348.3 470.7 L 359.3 457.9 C 362.8 454.3 357.6 449.2 352.2 451.4 L 346.9 453.7 C 334.3 442.5 324.5 428.4 318.3 413.9 Z" fill="#6e3c1b"/>
+  <path d="M 423.0 346.6 C 430.5 361.8 439.2 381.6 443.0 393.0 C 445.3 399.8 449.3 401.1 454.1 399.6 L 470.4 395.6 C 475.4 394.6 474.1 387.6 468.5 386.2 L 462.8 385.0 C 459.1 368.6 457.3 351.7 456.3 337.2 Z" fill="#6e3c1b"/>
+  <path d="M 252.9 469.3 C 269.1 479.9 286.9 481.9 300.2 477.7 C 308.3 478.0 317.5 481.4 324.8 487.9 C 329.5 491.7 333.9 491.4 336.6 487.1 L 347.3 472.0 C 350.4 468.0 344.9 463.5 339.7 466.1 L 333.5 470.3 C 325.8 464.7 317.2 456.0 311.3 444.0 C 305.3 428.4 296.9 412.4 282.9 406.6 Z" fill="#a3612d"/>
+  <path d="M 449.5 336.3 C 455.9 354.5 462.5 375.2 465.1 386.9 C 466.6 393.9 470.4 395.6 475.4 394.6 L 493.7 392.2 C 498.7 391.8 498.3 384.6 492.9 382.6 L 485.6 381.0 C 483.6 364.3 483.6 347.4 483.9 330.5 Z" fill="#a3612d"/>
+  <path d="M244.3 465.0 C245.6 451.1 250.8 420.0 264.9 398.2 C279.0 376.5 306.4 350.3 328.8 334.4 C351.3 318.5 380.1 309.3 399.5 302.8 C418.8 296.3 419.7 293.9 444.9 295.5 C470.2 297.1 528.9 308.7 550.9 312.3 C573.0 315.9 580.0 312.0 582.0 322.0 L 575.0 402.0 C 552.0 392.0 530.0 372.0 515.0 357.0 C 503.0 345.0 492.0 339.0 480.0 340.0 C 476.0 340.5 474.5 341.1 472.4 341.6 C459.5 344.4 438.3 344.1 417.8 351.0 C397.2 358.0 367.9 369.9 349.3 383.3 C330.6 396.7 316.8 417.5 305.8 431.6 C294.9 445.7 291.6 459.7 283.5 468.1 C275.5 476.5 264.1 482.3 257.5 481.8 C251.0 481.3 243.1 478.9 244.3 465.0 Z" fill="#c98a4e"/>
+  <path d="M258.9 433.8 C249.3 432.8 237.4 446.4 229.4 457.6 C221.4 468.7 213.5 485.6 210.8 500.8 C208.1 516.0 211.6 534.1 213.2 548.7 C214.8 563.3 217.6 576.0 220.5 588.6 C223.3 601.2 226.5 613.3 230.2 624.1 C233.9 635.0 238.1 645.3 242.7 653.5 C247.2 661.7 252.8 669.0 257.4 673.4 C262.0 677.9 266.7 681.2 270.2 680.3 C273.7 679.5 276.3 674.3 278.4 668.3 C280.4 662.4 281.9 653.7 282.5 644.5 C283.1 635.3 282.8 624.4 281.9 613.3 C281.0 602.2 278.9 589.7 277.0 577.6 C275.1 565.6 272.2 553.0 270.3 541.1 C268.4 529.3 265.7 516.3 265.7 506.6 C265.6 497.0 266.5 490.3 270.0 483.1 C273.5 475.9 288.6 471.9 286.7 463.6 C284.9 455.4 268.4 434.8 258.9 433.8 Z" fill="#a3612d"/>
+  <!-- head, jaws open on the cut end -->
+  <g transform="translate(584.5 373.0) rotate(42.0) scale(1.26)">
+    <path d="M -44 -20 C -46 -32 -40 -46 -28 -48 C -16 -48 -8 -40 -8 -30 Z" fill="#f0d6a6"/>
+    <path d="M -39 -23 C -40 -32 -36 -41 -28 -42 C -20 -42 -14 -36 -14 -31 Z" fill="#7e4520"/>
+    <path d="M 52 -2 C 42 -12 28 -20 12 -26 C -2 -30 -22 -32 -36 -26 C -46 -20 -50 -8 -46 6 C -38 18 -20 24 -2 24 C 8 24 16 24 24 24 C 30 24 32 20 28 18 L 14 11 L 46 8 C 52 6 55 3 52 -2 Z" fill="#c98a4e"/>
+    <path d="M 36 8 L 43 8 L 39.5 18 Z" fill="#fff"/>
+    <ellipse cx="14" cy="-12" rx="6.5" ry="5.5" fill="#140a04"/>
+    <circle cx="50" cy="-1" r="5.5" fill="#140a04"/>
+  </g>
+  <!-- bib from throat to chest -->
+  <path d="M 576.0 404.0 C 552.0 393.0 530.0 372.0 515.0 357.0 C 505.0 347.0 496.0 341.0 486.0 340.0 C 498.0 333.0 518.0 334.0 536.0 344.0 C 556.0 356.0 572.0 378.0 584.0 394.0 C 587.0 399.0 582.0 405.0 576.0 404.0 Z" fill="#f6eedc"/>
+  <!-- the short circuit across the cut -->
+  <g transform="translate(638.8 475.2) rotate(-47.0) scale(1.272 0.848)">
+    <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffae00" opacity="0.9" filter="url(#bglow)"/>
+    <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffd84a"/>
+    <path d="M16 -52 L-10 2 L8 2 L0 34 L20 -8 L4 -8 L18 -52 Z" fill="#fff6d0"/>
+  </g>
   </g>
 </svg>
