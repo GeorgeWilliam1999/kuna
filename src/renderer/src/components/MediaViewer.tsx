@@ -2,10 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { plotComment } from '@shared/input'
-import { pdfsFirst } from '@shared/media'
+import { viewerOrder } from '@shared/media'
 import type { MediaItem, MediaPage } from '@shared/types'
 import { sendToAgent } from '../actions'
 import { agentTitle, ago, bytes } from '../format'
+import { loadMarkdownImages, renderMarkdown } from '../markdown'
 import { useKuna } from '../store'
 import { closeOverlay, useOverlayKeys } from './Overlays'
 
@@ -25,6 +26,8 @@ interface Loaded {
   path: string
   url?: string
   data?: Uint8Array
+  /** a Markdown file, rendered and sanitised */
+  html?: string
   error?: string
 }
 
@@ -112,6 +115,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
   const rel = (p: string): string => (agent && p.startsWith(agent.cwd + '/') ? p.slice(agent.cwd.length + 1) : p)
   const stage = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
+  const mdRoot = useRef<HTMLElement>(null)
   const anchor = useRef<{ fx: number; fy: number; x: number; y: number } | null>(null)
   // a comment on the plot in view, sent to the agent
   const commentBox = useRef<HTMLTextAreaElement>(null)
@@ -138,7 +142,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       setNext((p as MediaPage['next']) ?? null)
       setBusy(null)
       // PDFs stay ahead of all images, also as more turn up
-      const all = pdfsFirst([...have, ...fresh])
+      const all = viewerOrder([...have, ...fresh])
       setItems(all)
       return all.indexOf(fresh[0])
     },
@@ -170,6 +174,12 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       if (cancelled) return
       if ('error' in res) return setFile({ path: current.path, error: res.error })
       if (current.kind === 'pdf') return setFile({ path: current.path, data: res.data })
+      if (current.kind === 'md') {
+        setFile({ path: current.path, html: renderMarkdown(new TextDecoder().decode(res.data)) })
+        const after = items?.[index + 1]
+        if (after) void window.kuna.media.fetch(host, after.path, stampOf(after))
+        return
+      }
       url = URL.createObjectURL(new Blob([res.data as BlobPart], { type: res.mime }))
       setFile({ path: current.path, url })
       const after = items?.[index + 1]
@@ -205,6 +215,19 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file?.data])
+
+  // the pictures a Markdown file refers to, once it is on screen
+  useEffect(() => {
+    const root = mdRoot.current
+    if (file?.html == null || !root || !host) return
+    let live = true
+    let urls: string[] = []
+    void loadMarkdownImages(root, host, file.path, () => live).then((u) => (live ? (urls = u) : u.forEach((x) => URL.revokeObjectURL(x))))
+    return () => {
+      live = false
+      urls.forEach((x) => URL.revokeObjectURL(x))
+    }
+  }, [file?.html, file?.path, host])
 
   useEffect(() => {
     const el = stage.current
@@ -260,7 +283,8 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     const st = stage.current
-    if (e.button !== 0 || !st) return
+    // Markdown is text to select, not a picture to pan
+    if (e.button !== 0 || !st || current?.kind === 'md') return
     const start = { x: e.clientX, y: e.clientY, left: st.scrollLeft, top: st.scrollTop }
     try {
       st.setPointerCapture(e.pointerId)
@@ -343,8 +367,11 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
           return true
         case '1':
           // actual pixels of an image; 100% (96 dpi) for a PDF
-          if (fit) zoomAt((pdf ? 96 / 72 : 1) / fit / zoom)
+          if (current?.kind === 'md') setZoom(1)
+          else if (fit) zoomAt((pdf ? 96 / 72 : 1) / fit / zoom)
           return true
+        case 'c':
+          return false // copies what is selected (in a Markdown file, say)
         case 'o':
           if (current && host) void window.kuna.media.openExternal(host, current.path, stampOf(current))
           return true
@@ -429,17 +456,18 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     <div className="media-overlay">
       <header className="media-head">
         <span className="media-count">{items ? (items.length ? `${index + 1} / ${items.length}${next ? '+' : ''}` : '0') : '…'}</span>
-        <span className="media-name">{current ? rel(current.path).split('/').pop() : 'Plots & PDFs'}</span>
+        <span className="media-name">{current ? rel(current.path).split('/').pop() : 'Plots, PDFs & Markdown'}</span>
         {current && <span className="media-path">{rel(current.path)}</span>}
         <span className="ph-spacer" />
         {busy && items && <span className="media-meta">{busy}</span>}
         {current && (
           <span className="media-meta">
-            {ago(current.mtime)} ago · {bytes(current.size)} · {zoom === 1 ? 'fit' : `${zoom < 1 ? zoom.toFixed(2) : zoom.toFixed(1)}×`}
+            {ago(current.mtime)} ago · {bytes(current.size)} ·{' '}
+            {current.kind === 'md' ? `${Math.round(zoom * 100)}%` : zoom === 1 ? 'fit' : `${zoom < 1 ? zoom.toFixed(2) : zoom.toFixed(1)}×`}
           </span>
         )}
         <span className="media-keys">
-          {comment ? '← → move in the comment · Enter sends · Esc Esc discards' : '← → plots · type to comment · pinch or ⌘+ ⌘− zoom · ⌘0 fit · ⌘O open · ⌘S save · Space close'}
+          {comment ? '← → move in the comment · Enter sends · Esc Esc discards' : '← → files · type to comment · pinch or ⌘+ ⌘− zoom · ⌘0 fit · ⌘O open · ⌘S save · Space close'}
         </span>
         {current && (
           <button
@@ -456,17 +484,17 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
         className={`media-stage ${base && (base.w * scale > stageSize.w || base.h * scale > stageSize.h) ? 'can-pan' : ''}`}
         ref={stage}
         onPointerDown={onPointerDown}
-        onDoubleClick={(e) => (zoom === 1 ? zoomAt(2.5, e.clientX, e.clientY) : setZoom(1))}
+        onDoubleClick={(e) => current?.kind !== 'md' && (zoom === 1 ? zoomAt(2.5, e.clientX, e.clientY) : setZoom(1))}
       >
         {!items && <div className="media-msg">{busy}</div>}
         {items && !items.length && !busy && (
           <div className="media-msg">
-            No images or PDFs yet. Kuna looks at the paths in the agent's replies, newest first, and then at files written in its folder since it
-            started.
+            No plots, PDFs or Markdown files yet. Kuna looks at the paths in the agent's replies, newest first, and then at files written in its
+            folder since it started.
           </div>
         )}
         {ready && file?.error && <div className="media-msg">{file.error}</div>}
-        {current && ready && (file?.url || pdf) && (
+        {current && ready && (file?.url || pdf || file?.html != null) && (
           <div className="zoom-area" style={{ padding: PAD }}>
             <div className="zoom-content" ref={content}>
               {file?.url && (
@@ -484,6 +512,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
                 />
               )}
               {pdf && <PdfPages pdf={pdf} scale={scale} />}
+              {file?.html != null && <article className="md media-md" ref={mdRoot} style={{ zoom }} dangerouslySetInnerHTML={{ __html: file.html }} />}
             </div>
           </div>
         )}
@@ -512,7 +541,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
         <nav className="media-strip">
           {items.map((it, i) => (
             <button key={it.path} className={i === index ? 'on' : ''} onClick={() => setIndex(i)} title={it.path}>
-              <span className={`kind kind-${it.kind}`}>{it.kind === 'pdf' ? 'pdf' : it.kind === 'svg' ? 'svg' : 'img'}</span>
+              <span className={`kind kind-${it.kind}`}>{it.kind === 'image' ? 'img' : it.kind}</span>
               {it.path.split('/').pop()}
             </button>
           ))}

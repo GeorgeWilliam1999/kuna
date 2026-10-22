@@ -5,7 +5,7 @@ import { compactBlocker, hasInputBox, messageBlocker, plotComment, screenState }
 import { parseJsonc } from '@shared/jsonc'
 import { cleanTypedPath, pastePath } from '@shared/paths'
 import { gridRows, neighbor } from '@shared/layout'
-import { extractMediaPaths, normalizePosix, pdfsFirst, resolveAgainst } from '@shared/media'
+import { extractMediaPaths, mediaKind, normalizePosix, resolveAgainst, viewerOrder } from '@shared/media'
 import { parseSshConfig } from '@shared/sshConfig'
 import { hasMath, splitMath, texToText } from '@shared/tex'
 import { TranscriptParser } from '@shared/transcript'
@@ -49,6 +49,15 @@ describe('media paths', () => {
   it('finds plots and pdfs but not urls', () => {
     const text = 'Saved plots/mass.png and "/eos/user/s/out.pdf". See https://x.org/a.png, also ~/fig_1.jpeg.'
     expect(extractMediaPaths(text)).toEqual(['plots/mass.png', '/eos/user/s/out.pdf', '~/fig_1.jpeg'])
+  })
+  it('finds Markdown files, as the viewer renders them', () => {
+    expect(extractMediaPaths('Notes are in docs/RESULTS.md and `summary.markdown`; see https://x.org/README.md.')).toEqual([
+      'docs/RESULTS.md',
+      'summary.markdown'
+    ])
+    expect(mediaKind('docs/RESULTS.md')).toBe('md')
+    expect(mediaKind('a.MARKDOWN')).toBe('md')
+    expect(mediaKind('notes.mdx')).toBeNull()
   })
   it('resolves relative paths', () => {
     expect(resolveAgainst('/work/ana/', './plots/../out/a.png')).toBe('/work/ana/out/a.png')
@@ -215,7 +224,12 @@ describe('plot order', () => {
   it('shows PDFs first, then images, each in the order the reply mentions them', () => {
     const refs = extractMediaPaths('Done: plots/b.png, plots/a.pdf, plots/c.png and plots/z.pdf')
     const items = refs.map((path) => ({ path, kind: path.endsWith('.pdf') ? 'pdf' : 'image' }))
-    expect(pdfsFirst(items).map((it) => it.path)).toEqual(['plots/a.pdf', 'plots/z.pdf', 'plots/b.png', 'plots/c.png'])
+    expect(viewerOrder(items).map((it) => it.path)).toEqual(['plots/a.pdf', 'plots/z.pdf', 'plots/b.png', 'plots/c.png'])
+  })
+  it('puts Markdown after the plots', () => {
+    const refs = extractMediaPaths('Wrote NOTES.md with plots/b.png and fit.pdf')
+    const items = refs.map((path) => ({ path, kind: mediaKind(path)! }))
+    expect(viewerOrder(items).map((it) => it.path)).toEqual(['fit.pdf', 'plots/b.png', 'NOTES.md'])
   })
 })
 

@@ -1728,6 +1728,34 @@ button.mini {
 .kind-pdf {
   color: var(--waiting);
 }
+.kind-md {
+  color: var(--accent);
+}
+
+/* a Markdown file in the viewer: a page of text to read and select */
+.media-md {
+  width: 80ch;
+  max-width: calc(100vw - 2 * 28px);
+  padding: 8px 40px 32px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  user-select: text;
+  cursor: text;
+}
+/* a link Kuna would not follow (only http and https open) reads as text */
+.media-md a:not([href]) {
+  color: inherit;
+}
+.media-md img {
+  max-width: 100%;
+  background: #fff;
+}
+.media-md pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
 /* ------------------------------------------------------ claude browser -- */
 

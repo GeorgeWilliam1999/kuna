@@ -2,12 +2,14 @@ import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, extname, join } from 'node:path'
 import { app, shell } from 'electron'
-import { mediaKind, mimeFor, pdfsFirst, resolveAgainst } from '@shared/media'
+import { mediaKind, mimeFor, resolveAgainst, viewerOrder } from '@shared/media'
 import type { ClaudeFileEntry, HostId, MediaItem, MediaPage } from '@shared/types'
 import type { AgentService } from './agents'
 import { b64 } from './hosts/exec'
 
 const MAX_MEDIA_BYTES = 80 * 1024 * 1024
+/** a Markdown file past this is not a note to read in the viewer */
+const MAX_MD_BYTES = 4 * 1024 * 1024
 
 /**
  * Images/PDFs an agent produced or mentioned, and the files behind them.
@@ -34,7 +36,7 @@ export class MediaService {
             )
           : await host.exec(['media', agent.id, b64(agent.cwd)], { timeoutMs: 30_000 })
       const found = res.code === 0 ? parseStat(res.stdout.toString('utf8')).sort((a, b) => b.mtime - a.mtime) : []
-      return { items: pdfsFirst(dedupe(found)), next: null }
+      return { items: viewerOrder(dedupe(found)), next: null }
     }
 
     // mentions grouped by reply, newest first
@@ -61,8 +63,8 @@ export class MediaService {
       const res = await host.exec(['stat', b64(paths.join('\n'))], { timeoutMs: 20_000 })
       if (res.code !== 0) continue
       const found = new Map(parseStat(res.stdout.toString('utf8')).map((it) => [it.path, it]))
-      // PDFs first, then images; each newest reply first, in the order the reply names them
-      const items = pdfsFirst(dedupe(paths.flatMap((p) => found.get(p) ?? [])))
+      // PDFs first, then images, then Markdown; each newest reply first, in the order the reply names them
+      const items = viewerOrder(dedupe(paths.flatMap((p) => found.get(p) ?? [])))
       if (items.length) return { items, next: i < turns.length ? { before: batch[batch.length - 1] } : { scan: true } }
     }
     return { items: [], next: { scan: true } }
@@ -70,14 +72,16 @@ export class MediaService {
 
   /** `stamp` (mtime:size) keys the cache, so a re-made plot is never served stale. */
   async fetch(hostId: HostId, path: string, stamp = ''): Promise<{ data: Uint8Array; mime: string } | { error: string }> {
-    // only plots and PDFs: the viewer has no business reading other files
-    if (typeof path !== 'string' || !mediaKind(path)) return { error: 'Not an image or PDF.' }
+    // only plots, PDFs and Markdown: the viewer has no business reading other files
+    const kind = typeof path === 'string' ? mediaKind(path) : null
+    if (!kind) return { error: 'Not an image, PDF or Markdown file.' }
+    const max = kind === 'md' ? MAX_MD_BYTES : MAX_MEDIA_BYTES
     const ck = `${hostId}\0${path}\0${stamp}`
     const hit = this.cache.get(ck)
     if (hit && (stamp || Date.now() - hit.at < 5000)) return { data: hit.data, mime: mimeFor(path) }
-    const res = await this.agents.host(hostId).exec(['cat', b64(path)], { timeoutMs: 120_000, maxBytes: MAX_MEDIA_BYTES })
+    const res = await this.agents.host(hostId).exec(['cat', b64(path)], { timeoutMs: 120_000, maxBytes: max })
     if (res.code !== 0) return { error: res.stderr.trim() || `could not read ${path}` }
-    if (res.stdout.length > MAX_MEDIA_BYTES) return { error: 'File is larger than 80 MB.' }
+    if (res.stdout.length > max) return { error: `File is larger than ${max / 1024 / 1024} MB.` }
     this.cache.delete(ck)
     this.cache.set(ck, { data: res.stdout, at: Date.now() })
     while (this.cache.size > 30) this.cache.delete(this.cache.keys().next().value!)

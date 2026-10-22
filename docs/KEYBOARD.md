@@ -59,14 +59,14 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 
 | Keys | Does |
 | --- | --- |
-| Space | preview the plots and PDFs of the agent's latest reply, fitted to the window: all PDFs first, then the images (newest reply first, in the order the reply names them). A pane's header counts them ("2 pdf 3 img"); clicking the count opens them too |
+| Space | preview the plots, PDFs and Markdown files of the agent's latest reply, fitted to the window: all PDFs first, then the images, then Markdown, rendered as a page with its pictures (newest reply first, in the order the reply names them). A pane's header counts them ("2 pdf 3 img 1 md"); clicking the count opens them too |
 | → / ← | older / newer file (with no comment typed); past the last one, → loads an earlier reply's files, and the folder scan comes last |
 | ↑ ↓, PgUp PgDn | scroll (PDF pages, zoomed plots) |
 | *type* | write a comment on the plot in view, right away; while it has text the arrows move between its letters |
 | Enter | send the comment to the agent as "About plots/x.png: …" (queued if it is mid-turn); ⇧Enter new line, Esc Esc discards |
 | ⌘+ ⌘− | zoom in, out (pinch on the trackpad, or ⌘ + wheel, zooms around the pointer) |
 | ⌘0 · ⌘1 | fit to the window · actual pixels (100% for a PDF) |
-| ⌘O | open the file in Preview (an SVG is shown in Finder instead, since its default app is a browser) |
+| ⌘O | open the file in its app: Preview for plots and PDFs, your Markdown app for `.md` (an SVG is shown in Finder instead, since its default app is a browser) |
 | ⌘S | save a copy in your Downloads folder (also the **Save to Downloads** button; a taken name becomes `fit (1).pdf`) |
 | ⌘R | start over from the latest reply |
 | Space or Esc | close (with nothing typed) |

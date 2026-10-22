@@ -1,8 +1,8 @@
 import type { MediaItem } from './types'
 
-const EXT = 'png|jpe?g|gif|webp|svg|pdf'
+const EXT = 'png|jpe?g|gif|webp|svg|pdf|md|markdown'
 
-// A path-ish token ending in a media extension, preceded by a delimiter so
+// A path-ish token ending in a media (or Markdown) extension, preceded by a delimiter so
 // URLs (`https://x/a.png`) and identifiers (`foo.png_bar`) are not matched.
 const MEDIA_RE = new RegExp(
   String.raw`(?:^|[\s"'\x60(\[=:,>])((?:~|\.{1,2})?\/?(?:[\w@%+.,~-]+\/)*[\w@%+,~-][\w@%+.,~-]*\.(?:${EXT}))(?=$|[\s"'\x60)\],;:!?.<])`,
@@ -15,6 +15,7 @@ export function mediaKind(path: string): MediaItem['kind'] | null {
   const ext = m[1].toLowerCase()
   if (ext === 'pdf') return 'pdf'
   if (ext === 'svg') return 'svg'
+  if (ext === 'md' || ext === 'markdown') return 'md'
   if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'image'
   return null
 }
@@ -35,6 +36,9 @@ export function mimeFor(path: string): string {
       return 'image/svg+xml'
     case 'pdf':
       return 'application/pdf'
+    case 'md':
+    case 'markdown':
+      return 'text/markdown'
     default:
       return 'application/octet-stream'
   }
@@ -77,10 +81,11 @@ export function resolveAgainst(cwd: string, p: string): string {
 }
 
 /**
- * The order plots are shown in: PDFs first, then images, each in the order
- * given (the order a reply mentions them, left to right; newest first for
- * the folder scan).
+ * The order the viewer shows files in: PDFs first, then images, then
+ * Markdown, each in the order given (the order a reply mentions them, left
+ * to right; newest first for the folder scan).
  */
-export function pdfsFirst<T extends { kind: string }>(items: T[]): T[] {
-  return [...items.filter((it) => it.kind === 'pdf'), ...items.filter((it) => it.kind !== 'pdf')]
+export function viewerOrder<T extends { kind: string }>(items: T[]): T[] {
+  const rank = (it: T): number => (it.kind === 'pdf' ? 0 : it.kind === 'md' ? 2 : 1)
+  return [0, 1, 2].flatMap((r) => items.filter((it) => rank(it) === r))
 }

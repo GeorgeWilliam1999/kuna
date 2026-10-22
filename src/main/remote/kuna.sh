@@ -624,7 +624,7 @@ stat_paths() {
 }
 
 media() {
-  # media <id> <cwd64> [minutes]: images/pdfs written in the agent's folder since
+  # media <id> <cwd64> [minutes]: images, pdfs and markdown written in the agent's folder since
   # it started (Kuna agents: newer than their meta file; others: last N minutes)
   valid_id "$1"
   [ -z "$3" ] || valid_num "$3"
@@ -633,7 +633,7 @@ media() {
   [ -d "$cwd" ] || exit 0
   if [ -n "$3" ]; then set -- -mmin "-$3"; elif [ -f "$ref" ]; then set -- -newer "$ref"; else exit 0; fi
   find "$cwd" -maxdepth 6 \( -name .git -o -name node_modules -o -name .venv -o -name venv -o -name __pycache__ -o -name .cache \) -prune -o \
-    -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.gif' -o -iname '*.webp' -o -iname '*.svg' -o -iname '*.pdf' \) \
+    -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.gif' -o -iname '*.webp' -o -iname '*.svg' -o -iname '*.pdf' -o -iname '*.md' -o -iname '*.markdown' \) \
     "$@" -print 2>/dev/null | head -n 400 | while IFS= read -r f; do
     printf '%s\t%s\n' "$(fstat "$f")" "$f"
   done

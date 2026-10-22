@@ -208,7 +208,7 @@ export interface AgentDetails {
   subagents: SubagentInfo[]
   recentTools: ToolCallInfo[]
   filesTouched: string[]
-  /** images and PDFs mentioned, oldest first, with the reply (turn) that mentioned each last */
+  /** images, PDFs and Markdown files mentioned, oldest first, with the reply (turn) that mentioned each last */
   mediaRefs: MediaRef[]
   /** AskUserQuestion calls still waiting for an answer */
   pendingQuestions: PendingQuestion[]
@@ -249,7 +249,7 @@ export interface MediaItem {
   path: string
   mtime: number
   size: number
-  kind: 'image' | 'pdf' | 'svg'
+  kind: 'image' | 'pdf' | 'svg' | 'md'
 }
 
 /** One step back through an agent's plots: newest reply first, the folder scan last. */
