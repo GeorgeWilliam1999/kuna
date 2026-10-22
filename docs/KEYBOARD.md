@@ -81,7 +81,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 | --- | --- |
 | ⌘N | new project |
 | ⌘O | add a folder to the selected project (on an agent under "Other agents": its directory is suggested). Paste a whole path into it, or type with Tab completion; ↑ ↓ walk the listed folders |
-| ⇧↑ / ⇧↓ | move the selected project, folder or agent up or down |
+| ⌥↑ / ⌥↓ | move the selected project, folder or agent up or down; keep ⌥ held to carry it further (⇧↑ / ⇧↓ work too) |
 | ⌘R | rename the selected project, folder (colour too; `$…$` math allowed) or agent |
 | ⌘⌫ | remove the selected folder or project when nothing is typed (agents keep running) |
 

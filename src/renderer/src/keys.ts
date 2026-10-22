@@ -212,7 +212,8 @@ function sidebarKey(ev: KeyboardEvent): void {
   switch (ev.key) {
     case 'ArrowUp':
     case 'ArrowDown':
-      if (ev.shiftKey) nudgeSelection(ev.key === 'ArrowUp' ? -1 : 1)
+      // ⌥ (as on panes) or ⇧ carries the selected row up or down
+      if (ev.altKey || ev.shiftKey) nudgeSelection(ev.key === 'ArrowUp' ? -1 : 1)
       else moveSelection(ev.key === 'ArrowUp' ? -1 : 1)
       return stop(ev)
     // arrows never roll rows out or in (Enter, Space or a click does)

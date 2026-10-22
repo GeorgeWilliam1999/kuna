@@ -55,7 +55,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
     keys: [
       ['⌘N', 'new project (this Mac or an SSH host)'],
       ['⌘O', 'add a folder to the selected project'],
-      ['⇧↑ / ⇧↓', 'move a project, folder or agent up or down (or drag it)'],
+      ['⌥↑ / ⌥↓', 'move a project, folder or agent up or down (⇧ too, or drag it)'],
       ['⌘⌫', 'remove the selected folder or project'],
       ['drag', 'a pane header onto another pane swaps them; panel edges resize']
     ]
