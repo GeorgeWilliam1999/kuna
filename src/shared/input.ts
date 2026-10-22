@@ -21,22 +21,6 @@ export function compactBlocker(a: AgentRuntime): string | undefined {
   return undefined
 }
 
-/**
- * Why a message can't be typed into the agent now. A working agent takes it:
- * Claude Code queues what is sent mid-turn and reads it when the turn ends.
- */
-export function messageBlocker(a: AgentRuntime): string | undefined {
-  if (!a.alive && a.kind !== 'claude') return 'The agent has exited.'
-  if (a.status === 'waiting') return 'It is waiting for you. Answer it first.'
-  if (a.status === 'starting') return 'It is still starting.'
-  return undefined
-}
-
-/** A comment on a plot, as the agent reads it (one line: Enter would send early). */
-export function plotComment(path: string, comment: string): string {
-  return `About ${path}: ${comment.replace(/\s*\n\s*/g, ' ').trim()}`
-}
-
 export type ScreenState = 'input' | 'busy' | 'question' | 'unknown'
 
 /** The prompt line between two rules: `❯ ` in Claude Code 2.1, `│ > ` before. */

@@ -43,6 +43,8 @@ export interface Settings {
   inspector: boolean
   sidebarWidth: number
   inspectorWidth?: number
+  /** the agent's column beside a file in the plot viewer */
+  viewerChatWidth?: number
   /** macOS notification when an agent finishes or needs you while Kuna is in the background */
   notify: boolean
 }

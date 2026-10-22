@@ -1,5 +1,5 @@
 import { moveFolderTo, placeAgent } from '@shared/arrange'
-import { CLEAR_INPUT, compactBlocker, hasInputBox, messageBlocker, screenState, type ScreenState } from '@shared/input'
+import { CLEAR_INPUT, compactBlocker, screenState, type ScreenState } from '@shared/input'
 import { gridRows, neighbor, type Direction } from '@shared/layout'
 import type { AgentRuntime } from '@shared/types'
 import { OTHER_FOLDER_ID, assignAgents, buildTree, folderOfAgent, type TreeNode } from './tree'
@@ -207,15 +207,18 @@ export function leaveScroll(key: string): Promise<void> | null {
 export function leaveInsert(clear: boolean): void {
   const key = focusedKey()
   const e = key ? terminalEntry(key) : undefined
-  if (e && clear && e.typed > 0) {
-    // End, then erase what this typing session added to the agent's input box
-    writeToAgent(e.key, '\x1b[F' + '\x7f'.repeat(Math.min(e.typed, 4000)))
-  }
+  if (e && clear) discardTyped(e)
   if (e) {
     e.typed = 0
     e.term.blur()
   }
   set({ mode: 'nav' })
+}
+
+/** Esc Esc: End, then erase what this typing session added to the agent's input box. */
+export function discardTyped(e: TermEntry): void {
+  if (e.typed > 0) writeToAgent(e.key, '\x1b[F' + '\x7f'.repeat(Math.min(e.typed, 4000)))
+  e.typed = 0
 }
 
 // ---------------------------------------------------------------- agents --
@@ -385,21 +388,17 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 /**
  * Wait until a tab is attached, its screen has stopped redrawing and shows
  * Claude Code's input box. Returns why not otherwise; nothing is typed then.
- * `whileBusy`: a running turn is fine (the spinner never stops redrawing, so
- * the input box under it is enough once the screen has had a moment).
  */
-async function readyTerminal(key: string, timeoutMs: number, whileBusy = false): Promise<TermEntry | string> {
+async function readyTerminal(key: string, timeoutMs: number): Promise<TermEntry | string> {
   const start = Date.now()
   let seen: ScreenState = 'unknown'
   while (Date.now() - start < timeoutMs) {
     const e = terminalEntry(key)
     // a new tab gets its terminal on the next render
     if (e?.disposed || (!e && Date.now() - start > 3000) || !get().tabs.includes(key)) return 'Its tab was closed; nothing was typed.'
-    const quiet = Date.now() - (e?.lastData ?? 0) > 700
-    if (e?.ptyId && e.gotData && (quiet || (whileBusy && Date.now() - start > 1500))) {
-      const lines = screenLines(key)
-      seen = screenState(lines)
-      if (seen === 'input' || (whileBusy && seen === 'busy' && hasInputBox(lines))) return e
+    if (e?.ptyId && e.gotData && Date.now() - (e.lastData ?? 0) > 700) {
+      seen = screenState(screenLines(key))
+      if (seen === 'input') return e
     }
     await sleep(250)
   }
@@ -420,13 +419,12 @@ async function typeLine(e: TermEntry, text: string): Promise<void> {
 }
 
 /**
- * Type a line into the agent as if typed in its input box and sent; returns
- * why it couldn't. Kuna agents without a tab get it through tmux; background
- * sessions only take input through `claude attach`, so their tab is opened.
- * `whileBusy`: a message, which Claude Code queues during a turn (a slash
- * command like /compact waits for an idle agent instead).
+ * Type a slash command into an idle agent as if typed in its input box and
+ * sent; returns why it couldn't. Kuna agents without a tab get it through
+ * tmux; background sessions only take input through `claude attach`, so their
+ * tab is opened.
  */
-async function typeIntoAgent(key: string, a: AgentRuntime, text: string, whileBusy: boolean): Promise<string | undefined> {
+async function typeIntoAgent(key: string, a: AgentRuntime, text: string): Promise<string | undefined> {
   // leave tmux scroll mode first, or the keys would drive tmux instead of the agent
   if (a.kind === 'tmux' && a.inCopyMode) await window.kuna.agents.key(key, ['-X', 'cancel'])
   const open = terminalEntry(key)
@@ -438,53 +436,15 @@ async function typeIntoAgent(key: string, a: AgentRuntime, text: string, whileBu
   else if (!open.ptyId) reattach(key)
   // background sessions take input only through `claude attach`, which can
   // take a while to come up on a busy node
-  const e = await readyTerminal(key, open?.ptyId ? 5000 : 90_000, whileBusy)
+  const e = await readyTerminal(key, open?.ptyId ? 5000 : 90_000)
   if (typeof e === 'string') return e
   // things may have moved on while it attached
   const now = get().agents[key]
   if (!now) return 'It is gone.'
-  const blocked = whileBusy ? messageBlocker(now) : compactBlocker(now)
+  const blocked = compactBlocker(now)
   if (blocked) return blocked
   await typeLine(e, text)
   return undefined
-}
-
-const ON_A_QUESTION = 'A question or permission prompt is on its screen; Enter would answer it. Answer it first.'
-
-/**
- * Paste a message into the agent and send it (Claude Code queues it if it is
- * mid-turn); returns why it couldn't. An open tab gets it right away, whatever
- * the status says; the screen is what counts: only a question or permission
- * prompt on it stops it, since the Enter would answer that.
- */
-export async function sendToAgent(key: string, text: string): Promise<string | undefined> {
-  try {
-    const a = get().agents[key]
-    const open = terminalEntry(key)
-    if (open?.ptyId) {
-      if (a?.kind === 'tmux' && a.inCopyMode) await window.kuna.agents.key(key, ['-X', 'cancel'])
-      if (screenState(screenLines(key)) === 'question') return ON_A_QUESTION
-      await typeLine(open, text)
-      return undefined
-    }
-    if (!a) return 'It is gone.'
-    if (a.kind === 'tmux') {
-      if (a.status === 'waiting') return ON_A_QUESTION
-      if (a.inCopyMode) await window.kuna.agents.key(key, ['-X', 'cancel'])
-      return (await window.kuna.agents.send(key, text)).error
-    }
-    // a background session without a tab: open it (attaching brings a stopped
-    // one back) and paste once its input box is there
-    if (!open) openTab(key, false)
-    else reattach(key)
-    const e = await readyTerminal(key, 90_000, true)
-    if (typeof e === 'string') return e
-    if (screenState(screenLines(key)) === 'question') return ON_A_QUESTION
-    await typeLine(e, text)
-    return undefined
-  } catch (err) {
-    return String(err)
-  }
 }
 
 /**
@@ -510,7 +470,7 @@ export async function compactAgent(key: string): Promise<void> {
   set({ compacting: { ...s.compacting, [key]: true } })
   let failed: string | undefined
   try {
-    failed = await typeIntoAgent(key, a, '/compact', false)
+    failed = await typeIntoAgent(key, a, '/compact')
   } catch (err) {
     failed = String(err)
   }

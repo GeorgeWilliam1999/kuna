@@ -346,36 +346,48 @@ function insertKey(ev: KeyboardEvent): void {
     else escToAgent(key)
     return
   }
-  if (ev.metaKey && !ev.shiftKey && !ev.ctrlKey && !ev.altKey && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) {
-    // ⌘← ⌘→: start / end of the line, as Ctrl+A / Ctrl+E (iTerm's natural text editing)
-    stop(ev)
-    if (key) writeToAgent(key, ev.key === 'ArrowLeft' ? '\x01' : '\x05')
-    return
-  }
   if ((ev.key === 'PageUp' || ev.key === 'PageDown') && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !ev.shiftKey) {
     stop(ev)
     return pageKey(key, ev)
   }
+  if (key) typeToAgent(key, ev, insertEnter)
+  // everything else goes to the terminal
+}
+
+/**
+ * The keys typed into an agent's terminal that Kuna handles itself, on a pane
+ * and in the plot viewer: ⌘← ⌘→, keys that have to take tmux out of scroll
+ * mode first, and Enter (`enter`). True when it took the key; everything
+ * else goes to the terminal.
+ */
+export function typeToAgent(key: string, ev: KeyboardEvent, enter: (key: string, shift: boolean) => void): boolean {
+  if (ev.metaKey && !ev.shiftKey && !ev.ctrlKey && !ev.altKey && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) {
+    // ⌘← ⌘→: start / end of the line, as Ctrl+A / Ctrl+E (iTerm's natural text editing)
+    stop(ev)
+    writeToAgent(key, ev.key === 'ArrowLeft' ? '\x01' : '\x05')
+    return true
+  }
   // after the wheel or PageUp, tmux's scroll mode would take these: leave it, then send them
   const plain = !ev.metaKey && !ev.ctrlKey && !ev.altKey
-  const leaving = key && plain && (ev.key === 'Enter' || ev.key === 'Backspace' || isPrintable(ev)) ? leaveScroll(key) : null
-  if (leaving && key) {
+  const leaving = plain && (ev.key === 'Enter' || ev.key === 'Backspace' || isPrintable(ev)) ? leaveScroll(key) : null
+  if (leaving) {
     stop(ev)
     const e = terminalEntry(key)
     const k = ev.key
     const shift = ev.shiftKey
     void leaving.then(() => {
-      if (k === 'Enter') return insertEnter(key, shift)
+      if (k === 'Enter') return enter(key, shift)
       writeToAgent(key, k === 'Backspace' ? '\x7f' : k)
       if (e) e.typed = k === 'Backspace' ? Math.max(0, e.typed - 1) : e.typed + 1
     })
-    return
+    return true
   }
-  if (ev.key === 'Enter' && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
+  if (ev.key === 'Enter' && plain) {
     stop(ev)
-    if (key) insertEnter(key, ev.shiftKey)
+    enter(key, ev.shiftKey)
+    return true
   }
-  // everything else goes to the terminal
+  return false
 }
 
 function insertEnter(key: string, shift: boolean): void {

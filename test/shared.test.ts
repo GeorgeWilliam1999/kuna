@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { describeActivity, shortActivity } from '@shared/activity'
 import { baseModelId, contextInfo, contextLevel, contextWindowSize, modelFlag } from '@shared/context'
-import { compactBlocker, hasInputBox, messageBlocker, plotComment, screenState } from '@shared/input'
+import { compactBlocker, hasInputBox, screenState } from '@shared/input'
 import { parseJsonc } from '@shared/jsonc'
 import { cleanTypedPath, pastePath } from '@shared/paths'
 import { gridRows, neighbor } from '@shared/layout'
@@ -306,12 +306,7 @@ describe('typing /compact', () => {
     expect(compactBlocker({ ...idle, kind: 'claude', alive: false, status: 'exited' })).toBeUndefined()
   })
 
-  it('lets a message through mid-turn, not into a question', () => {
-    expect(messageBlocker({ ...idle, status: 'working' })).toBeUndefined()
-    expect(messageBlocker(idle)).toBeUndefined()
-    expect(messageBlocker({ ...idle, status: 'waiting' })).toMatch(/waiting for you/)
-    expect(messageBlocker({ ...idle, kind: 'claude', alive: false, status: 'exited' })).toBeUndefined()
-    expect(plotComment('plots/mvis.png', ' bins too wide\n  at high mass ')).toBe('About plots/mvis.png: bins too wide at high mass')
+  it('finds the input box under a running turn', () => {
     const rule = '─'.repeat(40)
     expect(hasInputBox(['✳ Thinking… (3s)', rule, '❯ ', rule])).toBe(true)
     expect(hasInputBox(['Do you want to proceed?', '❯ 1. Yes'])).toBe(false)

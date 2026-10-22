@@ -144,7 +144,7 @@ function PaneHeader({ agentKey, index, unread }: { agentKey: string; index: numb
 }
 
 /** What the agent is waiting on, right under the header, with its numbered choices. */
-function QuestionStrip({ agentKey }: { agentKey: string }): React.JSX.Element | null {
+export function QuestionStrip({ agentKey }: { agentKey: string }): React.JSX.Element | null {
   const a = useKuna((s) => s.agents[agentKey])
   const d = useKuna((s) => s.details[agentKey])
   if (!a) return null
@@ -176,6 +176,8 @@ function AgentPane({ agentKey, index }: { agentKey: string; index: number }): Re
   const typing = useKuna((s) => s.zone === 'pane' && s.paneIndex === index && s.mode === 'insert')
   const unread = useKuna((s) => !!s.agents[agentKey] && isUnread(s.agents[agentKey], s.lastSeen))
   const escHint = useKuna((s) => s.escHint)
+  // the plot viewer has the terminal while it shows this agent's files; it comes back after
+  const lent = useKuna((s) => s.overlay?.kind === 'media' && s.overlay.key === agentKey)
   const projects = useKuna((s) => s.projects)
   const agents = useKuna((s) => s.agents)
   const hosts = useKuna((s) => s.hosts)
@@ -186,10 +188,11 @@ function AgentPane({ agentKey, index }: { agentKey: string; index: number }): Re
   )
 
   useLayoutEffect(() => {
+    if (lent) return
     const e = getTerminal(agentKey)
     slot.current?.appendChild(e.el)
     fitTerminal(agentKey)
-  }, [agentKey])
+  }, [agentKey, lent])
 
   useEffect(() => {
     const el = slot.current

@@ -60,11 +60,13 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 
 | Keys | Does |
 | --- | --- |
-| Space | preview the plots, PDFs and Markdown files of the agent's latest reply, fitted to the window: all PDFs first, then the images, then Markdown, rendered as a page with its pictures, LaTeX math (`$…$`, `$$…$$`) and Mermaid diagrams (newest reply first, in the order the reply names them). A pane's header counts them ("2 pdf 3 img 1 md"); clicking the count opens them too |
-| → / ← | older / newer file (with no comment typed); past the last one, → loads an earlier reply's files, and the folder scan comes last |
-| ↑ ↓, PgUp PgDn | scroll (PDF pages, zoomed plots) |
-| *type* | write a comment on the plot in view, right away; while it has text the arrows move between its letters |
-| Enter | send the comment to the agent as "About plots/x.png: …" (queued if it is mid-turn); ⇧Enter new line, Esc Esc discards |
+| Space | preview the plots, PDFs and Markdown files of the agent's latest reply, fitted to the window: all PDFs first, then the images, then Markdown, rendered as a page with its pictures, LaTeX math (`$…$`, `$$…$$`) and Mermaid diagrams (newest reply first, in the order the reply names them). A pane's header counts them ("2 pdf 3 img 1 md"); clicking the count opens them too. The file fills the left; on the right are the list of files and, under it, the agent itself, its own terminal as on its pane |
+| → / ← | older / newer file (with nothing typed); past the last one, → loads an earlier reply's files, and the folder scan comes last. A click in the list shows that file |
+| ↑ ↓, PgUp PgDn | scroll the file (PDF pages, zoomed plots); the wheel over the agent scrolls its conversation |
+| *type* | write to the agent beside the file, right away, into its own input box; while something is typed the arrows move between its letters |
+| Enter | send it (Claude Code queues it if the agent is mid-turn); ⇧Enter new line, Esc Esc takes what you typed back out. On a stopped background session Enter brings it back first |
+| ⌘P | the path of the file in view, into what you are writing |
+| ⌘V · ⌘. | paste into your message · interrupt the agent (sends it Esc) |
 | ⌘+ ⌘− | zoom in, out (pinch on the trackpad, or ⌘ + wheel, zooms around the pointer) |
 | ⌘0 · ⌘1 | fit to the window · actual pixels (100% for a PDF) |
 | ⌘O | open the file in its app: Preview for plots and PDFs, your Markdown app for `.md` (an SVG is shown in Finder instead, since its default app is a browser) |
@@ -72,7 +74,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 | ⌘A, ⌘C | a Markdown file: select all of it (rendered or source), copy what is selected |
 | ⌘S | save a copy in your Downloads folder (also the **Save to Downloads** button; a taken name becomes `fit (1).pdf`) |
 | ⌘R | start over from the latest reply |
-| Space or Esc | close (with nothing typed) |
+| Space or Esc | close (with nothing typed); the agent's terminal goes back to its pane |
 | ⌘K | browse `.claude`: skills, agents, commands, `CLAUDE.md`, settings (Tab switches host) |
 | ⌘, | colour scheme, fonts, notifications |
 | ⌘+ / ⌘− | agent font size (starts from your iTerm2 profile's) |
@@ -95,7 +97,7 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 - Drag rows in the sidebar to rearrange it: projects above or below each other, folders within a project or into another project on the same host, agents within a folder or into another folder (also out of "Other agents"). A line shows where a row lands; a lit-up row means into it. Kuna remembers where you put agents.
 - Drag a pane's header onto another pane to swap the two (⌥ arrows do the same from the keyboard).
 - Drag the inner edge of the sidebar or the inspector to resize it; double-click the edge for the default width. Widths are remembered.
-- In the plot viewer, pinch to zoom, drag to pan, and double-click to zoom in on a spot (double-click again to fit).
+- In the plot viewer, pinch to zoom, drag to pan, and double-click to zoom in on a spot (double-click again to fit). Drag the edge between the file and the agent to make the agent's column wider or narrower (remembered; double-click the edge for the default).
 
 ## Reading the screen
 
