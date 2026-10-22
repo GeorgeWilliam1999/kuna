@@ -44,6 +44,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['→ / ←', 'older / newer file (→ keeps going into earlier replies)'],
       ['⌘+ ⌘− ⌘0', 'zoom in, out, fit (or pinch; drag to pan)'],
       ['type, Enter', 'in the preview: comment on the plot, sent to the agent'],
+      ['PgUp PgDn', 'scroll the agent’s conversation a page, as the wheel does'],
       ['⌘O · ⌘S', 'in the preview: open in Preview · save to Downloads'],
       ['⌘U', 'in the preview: a Markdown file as source or rendered'],
       ['⌥ drag', 'select text in an agent; copied when you let go, ⌘C too'],

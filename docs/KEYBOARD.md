@@ -43,6 +43,7 @@ Launching works the same way from the sidebar: start typing with a folder select
 | ⌘← ⌘→ | typing | jump to the start / end of the line (sent as Ctrl+A / Ctrl+E); ⌥← ⌥→ jump by words |
 | Esc Esc | launch box | discard the draft |
 | 1 … 9 | pane that needs you | answer a numbered permission prompt without entering typing mode |
+| PageUp PageDown | pane, navigate or typing | scroll the agent's conversation a page up or down, as the mouse wheel does; back at the bottom it is live again, and typing, Enter or Esc return there first |
 | ⇧Tab | pane, navigate | cycle Claude Code's permission mode (ask → accept edits → plan …) |
 | ⌘V | sidebar · pane | paste: in the sidebar into the launch box (to start an agent with it), on a pane into the agent |
 | ⌘. | anywhere | interrupt the agent (sends Esc to it) |
@@ -89,7 +90,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 
 ## Mouse
 
-Click selects; a click on a project or folder rolls it out or in, its ⋯ button renames it. Double-click opens an agent. The mouse wheel scrolls the agent's history (tmux scrollback); dragging selects text there and copies it to the clipboard. Hold **Option** while dragging to select in the terminal itself: the selection is copied when you let go (as in iTerm), and ⌘C copies it again.
+Click selects; a click on a project or folder rolls it out or in, its ⋯ button renames it. Double-click opens an agent. The mouse wheel (or PageUp / PageDown) scrolls the agent's history (tmux scrollback); typing returns to the bottom first, so the keys reach the agent; dragging selects text there and copies it to the clipboard. Hold **Option** while dragging to select in the terminal itself: the selection is copied when you let go (as in iTerm), and ⌘C copies it again.
 
 - Drag rows in the sidebar to rearrange it: projects above or below each other, folders within a project or into another project on the same host, agents within a folder or into another folder (also out of "Other agents"). A line shows where a row lands; a lit-up row means into it. Kuna remembers where you put agents.
 - Drag a pane's header onto another pane to swap the two (⌥ arrows do the same from the keyboard).

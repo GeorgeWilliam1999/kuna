@@ -12,6 +12,7 @@ import {
   killRequest,
   launchDraft,
   leaveInsert,
+  leaveScroll,
   moveInGrid,
   movePaneInGrid,
   moveSelection,
@@ -25,7 +26,7 @@ import {
   targetFolder
 } from './actions'
 import { get, removeFolder, removeProject, set, toast, toggleCollapsed, toggleFolder, updateSettings } from './store'
-import { copyTerminalSelection, reattach, screenLines, termFont, terminalEntry, writeToAgent } from './terminals'
+import { copyTerminalSelection, pageAgent, reattach, screenLines, termFont, terminalEntry, writeToAgent } from './terminals'
 
 const DOUBLE_ESC_MS = 500
 let lastEsc = 0
@@ -48,10 +49,7 @@ function stop(ev: KeyboardEvent): void {
 function escToAgent(key: string | undefined): void {
   const agent = key ? get().agents[key] : undefined
   if (!key || !agent) return
-  if (agent.inCopyMode) {
-    void window.kuna.agents.key(key, ['-X', 'cancel'])
-    return
-  }
+  if (leaveScroll(key)) return
   if (agent.status === 'working' || agent.status === 'background' || agent.status === 'starting') return
   sendEsc(key)
 }
@@ -314,6 +312,10 @@ function paneKey(ev: KeyboardEvent): void {
       stop(ev)
       if (key) set({ overlay: { kind: 'media', key } })
       return
+    case 'PageUp':
+    case 'PageDown':
+      stop(ev)
+      return pageKey(key, ev)
     case 'Tab':
       // Shift+Tab cycles Claude Code's permission mode without entering typing mode
       stop(ev)
@@ -350,19 +352,47 @@ function insertKey(ev: KeyboardEvent): void {
     if (key) writeToAgent(key, ev.key === 'ArrowLeft' ? '\x01' : '\x05')
     return
   }
+  if ((ev.key === 'PageUp' || ev.key === 'PageDown') && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !ev.shiftKey) {
+    stop(ev)
+    return pageKey(key, ev)
+  }
+  // after the wheel or PageUp, tmux's scroll mode would take these: leave it, then send them
+  const plain = !ev.metaKey && !ev.ctrlKey && !ev.altKey
+  const leaving = key && plain && (ev.key === 'Enter' || ev.key === 'Backspace' || isPrintable(ev)) ? leaveScroll(key) : null
+  if (leaving && key) {
+    stop(ev)
+    const e = terminalEntry(key)
+    const k = ev.key
+    const shift = ev.shiftKey
+    void leaving.then(() => {
+      if (k === 'Enter') return insertEnter(key, shift)
+      writeToAgent(key, k === 'Backspace' ? '\x7f' : k)
+      if (e) e.typed = k === 'Backspace' ? Math.max(0, e.typed - 1) : e.typed + 1
+    })
+    return
+  }
   if (ev.key === 'Enter' && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
     stop(ev)
-    if (!key) return
-    if (ev.shiftKey) {
-      writeToAgent(key, '\x1b\r') // newline in Claude Code's input
-      return
-    }
-    const answering = screenState(screenLines(key)) === 'question'
-    writeToAgent(key, '\r')
-    if (answering) stayWhileAsked(key)
-    else leaveInsert(false)
+    if (key) insertEnter(key, ev.shiftKey)
   }
   // everything else goes to the terminal
+}
+
+function insertEnter(key: string, shift: boolean): void {
+  if (shift) {
+    writeToAgent(key, '\x1b\r') // newline in Claude Code's input
+    return
+  }
+  const answering = screenState(screenLines(key)) === 'question'
+  writeToAgent(key, '\r')
+  if (answering) stayWhileAsked(key)
+  else leaveInsert(false)
+}
+
+/** PageUp / PageDown: a page of the agent's history, as the mouse wheel scrolls it. */
+function pageKey(key: string | undefined, ev: KeyboardEvent): void {
+  if (!key) return
+  pageAgent(key, ev.key === 'PageUp' ? -1 : 1, Boolean(get().agents[key]?.inCopyMode || terminalEntry(key)?.paged))
 }
 
 /**

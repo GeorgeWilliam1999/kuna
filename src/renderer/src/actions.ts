@@ -177,9 +177,28 @@ export function enterInsert(initial?: string): void {
     e.typed += initial.length
   }
   // leave tmux scroll mode first, or the keys would drive tmux instead of the agent
-  if (get().agents[key]?.inCopyMode) {
-    void window.kuna.agents.key(key, ['-X', 'cancel']).then(send)
-  } else send()
+  const leaving = leaveScroll(key)
+  if (leaving) void leaving.then(send)
+  else send()
+}
+
+/**
+ * Leave tmux's scroll mode (after the wheel or PageUp) before keys meant for
+ * the agent, which it would otherwise take as its own; null when not in it.
+ */
+export function leaveScroll(key: string): Promise<void> | null {
+  const a = get().agents[key]
+  const e = terminalEntry(key)
+  if (a?.kind !== 'tmux' || !e) return null
+  // the host reports scroll mode a moment late: just left it is out of it
+  const reported = a.inCopyMode && Date.now() - (e.leftScroll ?? 0) > 2000
+  if (!reported && !e.paged) return null
+  e.paged = false
+  e.leftScroll = Date.now()
+  return window.kuna.agents.key(key, ['-X', 'cancel']).then(
+    () => undefined,
+    () => undefined
+  )
 }
 
 export function leaveInsert(clear: boolean): void {

@@ -26,6 +26,10 @@ export interface TermEntry {
   /** ms timestamps of the user's last input to and mouse release in this terminal (clipboard writes) */
   lastInput?: number
   lastMouseUp?: number
+  /** PageUp took it into tmux's scroll mode: what is typed next leaves that first */
+  paged?: boolean
+  /** when Kuna last left tmux's scroll mode: the host's report of it lags behind */
+  leftScroll?: number
   slowTimer?: ReturnType<typeof setTimeout>
 }
 
@@ -261,6 +265,36 @@ export function writeToAgent(key: string, data: string): boolean {
   e.lastInput = Date.now()
   window.kuna.pty.write(e.ptyId, data)
   return true
+}
+
+/** tmux scrolls this many lines per wheel notch (copy mode's WheelUpPane) */
+const WHEEL_LINES = 5
+
+/**
+ * PageUp / PageDown on a pane: a page of the agent's history, the way the
+ * mouse wheel scrolls it. With tmux in between (it has the mouse): wheel
+ * notches, which tmux scrolls five lines each, the first only entering its
+ * scroll mode (`scrolling`: already in it); scrolling back to the bottom
+ * leaves it. Without (a background session): the terminal's own history.
+ */
+export function pageAgent(key: string, dir: -1 | 1, scrolling: boolean): void {
+  const e = entries.get(key)
+  if (!e) return
+  const { term } = e
+  if (term.modes.mouseTrackingMode === 'none') {
+    if (term.buffer.active.type === 'normal') term.scrollPages(dir)
+    else writeToAgent(key, dir < 0 ? '\x1b[5~' : '\x1b[6~')
+    return
+  }
+  const screen = term.element?.querySelector('.xterm-screen')
+  if (!term.element || !screen) return
+  const r = screen.getBoundingClientRect()
+  const notches = Math.max(1, Math.ceil((term.rows - 1) / WHEEL_LINES)) + (dir < 0 && !scrolling ? 1 : 0)
+  const at = { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
+  for (let i = 0; i < notches; i++) {
+    term.element.dispatchEvent(new WheelEvent('wheel', { deltaY: dir, deltaMode: WheelEvent.DOM_DELTA_LINE, ...at, bubbles: true, cancelable: true }))
+  }
+  if (dir < 0) e.paged = true
 }
 
 export function disposeTerminal(key: string): void {
