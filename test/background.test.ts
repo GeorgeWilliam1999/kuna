@@ -46,6 +46,9 @@ describe('Claude background sessions', () => {
     const r = { alive: true, state: 'working', tempo: 'active', updatedAt: 1000, createdAt: 0, cwd: '' }
     expect(bgStatus(r, 1060)).toBe('working')
     expect(bgStatus({ ...r, tempo: 'blocked' }, 1060)).toBe('waiting')
+    // answered: running again while state still says blocked
+    expect(bgStatus({ ...r, state: 'blocked', tempo: 'active' }, 1060)).toBe('working')
+    expect(bgStatus({ ...r, state: 'blocked', tempo: '' }, 1060)).toBe('waiting')
     expect(bgStatus({ ...r, tempo: 'idle' }, 1060)).toBe('idle')
     expect(bgStatus({ ...r, state: 'done', tempo: 'idle' }, 1060)).toBe('idle')
     expect(bgStatus({ ...r, state: 'failed', tempo: 'idle' }, 1060)).toBe('failed')

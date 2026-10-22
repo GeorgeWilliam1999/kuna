@@ -334,8 +334,10 @@ const STALE_TURN_S = 30 * 60
  * attached in a terminal, run without a roster entry.
  */
 export function bgStatus(r: BgRecord, now?: number): AgentStatus {
-  if (r.tempo === 'blocked' || r.state === 'blocked') return 'waiting'
+  if (r.tempo === 'blocked') return 'waiting'
+  // state lags: it stays "blocked" after the question is answered, until the turn ends
   if (r.tempo === 'active') return r.alive || now === undefined || now - r.updatedAt < STALE_TURN_S ? 'working' : 'exited'
+  if (r.state === 'blocked') return 'waiting'
   if (r.state === 'failed') return 'failed'
   if (r.state === 'stopped') return 'exited'
   if (pendingWork(r.inFlight)) return 'background'

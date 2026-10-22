@@ -59,8 +59,8 @@ Claude Code's daemon keeps one directory per background session in `~/.claude/jo
 
 | state.json | Kuna status |
 | --- | --- |
-| `tempo: blocked` (or `state: blocked`) | needs you |
-| `tempo: active` | working, with the tool call it is in the middle of (`T` line, from the transcript tail: "running python fit.py", "editing fit.py"); a turn silent for 30 min with no worker process died: stopped |
+| `tempo: blocked` (or `state: blocked` when `tempo` is not `active`) | needs you |
+| `tempo: active` (even with `state: blocked`, which stays after a question is answered until the turn ends) | working, with the tool call it is in the middle of (`T` line, from the transcript tail: "running python fit.py", "editing fit.py"); a turn silent for 30 min with no worker process died: stopped |
 | `state: failed` | failed |
 | `state: stopped` | stopped |
 | `inFlight` with queued prompts, tasks or a `session_cron` (`F` line) | waiting on a job: "next check 11:25" (`inFlight.wake`), "watching a job", "2 jobs running" |
