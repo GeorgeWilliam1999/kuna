@@ -403,6 +403,7 @@ async function readyTerminal(key: string, timeoutMs: number): Promise<TermEntry 
     await sleep(250)
   }
   if (seen === 'question') return 'It is waiting for you. Answer it first.'
+  if (seen === 'menu') return 'A panel is open on its screen (Esc closes it); nothing was typed.'
   if (seen === 'busy') return 'It is in the middle of a turn. Compact it once it is idle.'
   return 'Its input box did not show up, so nothing was typed.'
 }

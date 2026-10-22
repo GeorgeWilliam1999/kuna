@@ -5,7 +5,7 @@ import { viewerOrder } from '@shared/media'
 import type { MediaItem, MediaPage } from '@shared/types'
 import { discardTyped, leaveScroll, sendEsc } from '../actions'
 import { agentTitle, ago, bytes, doingText } from '../format'
-import { isPrintable, typeToAgent } from '../keys'
+import { isPrintable, panelOnScreen, typeToAgent } from '../keys'
 import { loadMarkdownImages, renderDiagrams, renderMarkdown } from '../markdown'
 import { get, updateSettings, useKuna } from '../store'
 import { copyTerminalSelection, disposeTerminal, fitTerminal, getTerminal, terminalEntry, writeToAgent } from '../terminals'
@@ -32,6 +32,16 @@ const MAX_SIDE_SHARE = 0.7
 /** its width until its edge is dragged: room for Claude Code's screen */
 const sideWidth = (): number => Math.round(Math.min(640, Math.max(420, window.innerWidth * 0.36)))
 const CURSOR_KEY: Record<string, string> = { ArrowUp: 'A', ArrowDown: 'B', ArrowRight: 'C', ArrowLeft: 'D' }
+
+/** What a key sends to the agent's terminal, for the keys the viewer types there itself. */
+function keyBytes(ev: KeyboardEvent, appCursor: boolean): string | undefined {
+  if (ev.metaKey || ev.ctrlKey || ev.altKey) return undefined
+  if (CURSOR_KEY[ev.key]) return (appCursor ? '\x1bO' : '\x1b[') + CURSOR_KEY[ev.key]
+  if (ev.key === 'Enter') return '\r'
+  if (ev.key === 'Tab') return ev.shiftKey ? '\x1b[Z' : '\t'
+  if (ev.key === 'Backspace') return '\x7f'
+  return ev.key.length === 1 ? ev.key : undefined
+}
 
 interface Loaded {
   path: string
@@ -518,7 +528,9 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
    * While something is typed the arrows move between its letters; with
    * nothing typed they browse and scroll, and Space and Esc close the viewer.
    * With something typed Space is a space and Esc Esc takes it back out of
-   * the agent's input box. Zoom and the rest are ⌘ keys, as in Preview.
+   * the agent's input box. While the agent shows a question or a panel
+   * (/config, /usage) all keys are its, Esc closes it. Zoom and the rest are
+   * ⌘ keys, as in Preview.
    */
   useOverlayKeys((ev) => {
     const n = items?.length ?? 0
@@ -593,6 +605,19 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       if (term && typeToAgent(agentKey, ev, enter)) return true
       return typing ? false : true // ⌘⌫ … go to the terminal
     }
+    // a question, permission prompt or panel (/config, /usage…) on its screen: the keys are its, Esc closes it
+    if (term && panelOnScreen(agentKey)) {
+      if (ev.key === 'Escape') {
+        sendEsc(agentKey)
+        return true
+      }
+      const bytes = keyBytes(ev, term.term.modes.applicationCursorKeysMode)
+      if (!bytes) return typing ? false : true
+      // typed here, so a choice is not counted as a message to take back
+      writeToAgent(agentKey, bytes)
+      term.term.focus()
+      return true
+    }
     // writing to the agent: the arrows move between its letters
     if (!writing) {
       switch (ev.key) {
@@ -651,15 +676,11 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     if (typeToAgent(agentKey, ev, enter)) return true
     if (typing) return false // the terminal takes it
     // the terminal lost the keyboard (a click on the file): what is typed goes to it from here
-    if (ev.key === 'Backspace') {
-      writeToAgent(agentKey, '\x7f')
-      term.typed = Math.max(0, term.typed - 1)
-    } else if (isPrintable(ev)) {
-      writeToAgent(agentKey, ev.key)
-      term.typed++
-    } else if (CURSOR_KEY[ev.key] && !ev.ctrlKey && !ev.altKey) {
-      writeToAgent(agentKey, (term.term.modes.applicationCursorKeysMode ? '\x1bO' : '\x1b[') + CURSOR_KEY[ev.key])
-    } else return true
+    const bytes = keyBytes(ev, term.term.modes.applicationCursorKeysMode)
+    if (!bytes) return true
+    writeToAgent(agentKey, bytes)
+    if (ev.key === 'Backspace') term.typed = Math.max(0, term.typed - 1)
+    else if (isPrintable(ev)) term.typed++
     term.term.focus()
     setTyped(term.typed)
     return true

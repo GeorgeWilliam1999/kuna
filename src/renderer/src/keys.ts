@@ -42,16 +42,24 @@ function stop(ev: KeyboardEvent): void {
 
 /**
  * A single Esc for the agent, as in a terminal: it closes Claude Code's menus
- * and panels (/usage, the slash list) and answers "no" to a prompt. Not while
- * it is working, where Esc would interrupt the turn (⌘. does that on purpose);
- * in tmux scroll mode it leaves scroll mode.
+ * and panels (/config, /usage, the slash list) and answers "no" to a prompt.
+ * Not while it is working, where Esc would interrupt the turn (⌘. does that on
+ * purpose), unless a panel or question on its screen takes the Esc (/config
+ * opened mid-turn); in tmux scroll mode it leaves scroll mode.
  */
 function escToAgent(key: string | undefined): void {
   const agent = key ? get().agents[key] : undefined
   if (!key || !agent) return
   if (leaveScroll(key)) return
-  if (agent.status === 'working' || agent.status === 'background' || agent.status === 'starting') return
+  const busy = agent.status === 'working' || agent.status === 'background' || agent.status === 'starting'
+  if (busy && !panelOnScreen(key)) return
   sendEsc(key)
+}
+
+/** A question, permission prompt or panel (/config, /usage…) on the agent's screen: Esc, Enter and the arrows are its. */
+export function panelOnScreen(key: string): boolean {
+  const state = screenState(screenLines(key))
+  return state === 'question' || state === 'menu'
 }
 
 /** Returns true on the second Esc of a double press; the first shows a hint. */
@@ -341,6 +349,8 @@ function insertKey(ev: KeyboardEvent): void {
   const key = focusedKey()
   if (ev.key === 'Escape') {
     stop(ev)
+    // a panel or question on screen takes every Esc (/config: one clears its search, the next closes it)
+    if (key && panelOnScreen(key)) return sendEsc(key)
     // the first goes to the agent; a second one right after leaves typing mode
     if (escPressed()) leaveInsert(true)
     else escToAgent(key)
@@ -395,7 +405,7 @@ function insertEnter(key: string, shift: boolean): void {
     writeToAgent(key, '\x1b\r') // newline in Claude Code's input
     return
   }
-  const answering = screenState(screenLines(key)) === 'question'
+  const answering = panelOnScreen(key)
   writeToAgent(key, '\r')
   if (answering) stayWhileAsked(key)
   else leaveInsert(false)
@@ -408,9 +418,10 @@ function pageKey(key: string | undefined, ev: KeyboardEvent): void {
 }
 
 /**
- * Enter answered a question: Claude Code may ask the next one right away
- * (several in a row, then "Submit answers"), so typing mode stays while one is
- * on screen and ends once none is, unless the user has started typing again.
+ * Enter answered a question or picked in a panel (/config): Claude Code may
+ * ask the next one right away (several in a row, then "Submit answers"), and a
+ * panel stays open, so typing mode stays while one is on screen and ends once
+ * none is, unless the user has started typing again.
  */
 function stayWhileAsked(key: string): void {
   const e = terminalEntry(key)
@@ -419,7 +430,7 @@ function stayWhileAsked(key: string): void {
   const check = (): void => {
     const s = get()
     if (s.mode !== 'insert' || focusedKey() !== key) return
-    if (screenState(screenLines(key)) !== 'question') {
+    if (!panelOnScreen(key)) {
       if (!terminalEntry(key)?.typed) leaveInsert(false)
       return
     }

@@ -322,6 +322,29 @@ describe('typing /compact', () => {
     expect(screenState(['Do you want to make this edit?', '❯ 1. Yes', '  2. No', 'Esc to cancel'])).toBe('question')
     expect(screenState(['[kuna] connecting to cluster1…', 'Last login: Tue Oct 20'])).toBe('unknown')
   })
+
+  it('tells a panel Esc closes from a running turn', () => {
+    const rule = '─'.repeat(60)
+    // /config as Claude Code 2.1 draws it: its search box and ❯ look like an input box
+    const config = (footer: string): string[] => [
+      '  Settings  Status   Config   Usage',
+      '  ╭' + rule + '╮',
+      '  │ ⌕ Search settings…  │',
+      '  ╰' + rule + '╯',
+      '  ❯ Auto-compact                                true',
+      '    Verbose output                              false',
+      '    ↓ 26 more',
+      footer
+    ]
+    expect(screenState(config('  Type to filter · Enter/↓ to select · ↑ to tabs · Esc to clear'))).toBe('menu')
+    expect(screenState(config('  Enter/Space to change · / to search · Esc to close'))).toBe('menu')
+    expect(screenState(['  Current session', '  ██████ 12% used', 'Press Esc to go back'])).toBe('menu')
+    // opened mid-turn, over the spinner
+    expect(screenState(['✳ Blanching… (7s · ↓ 1.2k tokens · esc to interrupt)', ...config('  Esc to close')])).toBe('menu')
+    // the spinner's own hint is a running turn, and a reply that names the key is not a panel
+    expect(screenState(['✳ Blanching… (7s · esc to interrupt)', rule, '❯ ', rule])).toBe('busy')
+    expect(screenState(['● Press the Esc key to close the viewer.', rule, '❯ ', rule, '  ? for shortcuts'])).toBe('input')
+  })
 })
 
 describe('TranscriptParser', () => {

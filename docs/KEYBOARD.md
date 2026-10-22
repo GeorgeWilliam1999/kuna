@@ -54,7 +54,7 @@ Launching works the same way from the sidebar: start typing with a folder select
 | Ctrl+X Ctrl+X | pane or sidebar agent | Kuna agent: kill it. Background session: `claude stop` and off the list, no question; the conversation is kept, nothing is deleted |
 | ⌘Z | navigate | bring back the session Ctrl+X Ctrl+X took off the list last (stopped: Enter opens it). One brought back from `claude agents` shows up again by itself |
 
-A single **Esc** goes to the agent, on a pane or while typing, as in a terminal: it closes Claude Code's menus and panels (`/usage`, the slash-command list) and answers "no" to a permission prompt. While the agent is working Kuna keeps it, since in Claude Code it would interrupt the turn; use **⌘.** when you do want to interrupt. In tmux scroll mode Esc leaves scroll mode. A second Esc right after the first leaves typing mode.
+A single **Esc** goes to the agent, on a pane or while typing, as in a terminal: it closes Claude Code's menus and panels (`/config`, `/usage`, the slash-command list) and answers "no" to a permission prompt. While the agent is working Kuna keeps it, since in Claude Code it would interrupt the turn (use **⌘.** when you do want to interrupt), unless a panel or question is on its screen, which takes the Esc instead. In tmux scroll mode Esc leaves scroll mode. A second Esc right after the first leaves typing mode; while a panel is open every Esc goes to it (`/config` takes two: one clears its search, the next closes it).
 
 ## Looking at things
 
@@ -75,6 +75,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 | ⌘S | save a copy in your Downloads folder (also the **Save to Downloads** button; a taken name becomes `fit (1).pdf`) |
 | ⌘R | start over from the latest reply |
 | Space or Esc | close (with nothing typed); the agent's terminal goes back to its pane |
+| *a panel of the agent's* | while it shows a question, a permission prompt or a panel (`/config`, `/usage`, `/model`), the arrows, Space, Enter and Esc are the agent's: Esc closes the panel, the next Esc the viewer |
 | ⌘K | browse `.claude`: skills, agents, commands, `CLAUDE.md`, settings (Tab switches host) |
 | ⌘, | colour scheme, fonts, notifications |
 | ⌘+ / ⌘− | agent font size (starts from your iTerm2 profile's) |

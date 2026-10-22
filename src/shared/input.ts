@@ -21,7 +21,15 @@ export function compactBlocker(a: AgentRuntime): string | undefined {
   return undefined
 }
 
-export type ScreenState = 'input' | 'busy' | 'question' | 'unknown'
+export type ScreenState = 'input' | 'busy' | 'question' | 'menu' | 'unknown'
+
+/**
+ * The key hints of a panel open in Claude Code (/config, /usage, /model, the
+ * resume list), at the start of a line or after a `·`: "Esc to close", "Press
+ * Esc to go back", "esc back". Not the spinner's "esc to interrupt", which
+ * would stop the turn.
+ */
+const MENU_HINT = /(?:^|·|│)\s*(?:press\s+)?esc(?: to (?!interrupt)\w| back\b)/i
 
 /** The prompt line between two rules: `❯ ` in Claude Code 2.1, `│ > ` before. */
 export function hasInputBox(lines: string[]): boolean {
@@ -30,15 +38,17 @@ export function hasInputBox(lines: string[]): boolean {
 }
 
 /**
- * What the bottom of a Claude Code screen shows: a question or menu, the
- * spinner of a running turn, or the empty input box ready for typing (the
- * prompt line between two rules: `❯ ` in Claude Code 2.1, `│ > ` before).
- * The same phrases `kuna snapshot` looks for on the host.
+ * What the bottom of a Claude Code screen shows: a question, a panel that Esc
+ * closes (even one opened mid-turn), the spinner of a running turn, or the
+ * empty input box ready for typing (the prompt line between two rules: `❯ `
+ * in Claude Code 2.1, `│ > ` before). The question phrases are the ones
+ * `kuna snapshot` looks for on the host.
  */
 export function screenState(lines: string[]): ScreenState {
   const tail = lines.filter((l) => l.trim()).slice(-12)
   const text = tail.join('\n')
   if (/Enter to confirm|Esc to cancel|Do you want to/.test(text)) return 'question'
+  if (tail.slice(-6).some((l) => MENU_HINT.test(l.trim()))) return 'menu'
   if (/… *\([0-9]|to interrupt/.test(text)) return 'busy'
   return hasInputBox(lines) ? 'input' : 'unknown'
 }
