@@ -414,8 +414,9 @@ button.mini {
   flex: none;
   background: var(--repo, var(--faint));
 }
+/* folders recede so the agents under them stand out */
 .folder-name {
-  color: var(--text);
+  color: var(--dim);
 }
 .folder-path {
   font: var(--fs-mono) var(--mono);
@@ -431,6 +432,10 @@ button.mini {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text);
+}
+/* bright names are the agents still running; exited and stopped ones dim, read or not */
+.row.st-exited .agent-name {
   color: var(--dim);
 }
 .row.sel .agent-name,

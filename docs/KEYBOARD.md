@@ -105,7 +105,8 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 | grey dot | idle, waiting for the next instruction |
 | red dot | failed |
 | hollow grey dot | exited or stopped. Enter brings a stopped background session back; ⇧⌘R resumes a Kuna agent's conversation |
-| diamond | finished or asked something since you last looked |
+| bright name | an agent that is running. Folder names, and agents that exited or were stopped, are dimmer |
+| diamond, bold name | finished or asked something since you last looked |
 | small square | open in a pane |
 | amber or red gauge | its context is getting long (half the window, or 300k tokens) or almost full (80%; Claude Code will compact it soon) |
 
