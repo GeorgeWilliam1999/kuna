@@ -135,6 +135,13 @@ export function swapTabs(i: number, j: number): void {
   set({ tabs, paneIndex: j, zone: 'pane' })
 }
 
+/** ⌥+arrows on a pane: swap it with the pane that way; held ⌥, it keeps going. */
+export function movePaneInGrid(dir: Direction): void {
+  const s = get()
+  const target = neighbor(gridRows(s.tabs.length), s.paneIndex, dir)
+  if (typeof target === 'number') swapTabs(s.paneIndex, target)
+}
+
 export function moveInGrid(dir: Direction): void {
   const s = get()
   const target = neighbor(gridRows(s.tabs.length), s.paneIndex, dir)

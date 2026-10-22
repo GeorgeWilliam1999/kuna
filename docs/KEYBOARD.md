@@ -20,6 +20,7 @@ Launching works the same way from the sidebar: start typing with a folder select
 | ← | sidebar | go to the parent row (arrows never roll projects or folders out or in: Enter, Space or a click does) |
 | ← → ↑ ↓ | panes | move between panes; ← from the leftmost pane returns to the sidebar (a hidden sidebar slides in, and hides again when you go back → or open an agent with Enter; Esc too); → from the rightmost pane likewise slides in a hidden right panel with the agent's details, until ←, Esc or any other key |
 | ⌘1 … ⌘9 | anywhere | focus pane n |
+| ⌥← ⌥→ ⌥↑ ⌥↓ | panes | move the focused pane that way, swapping it with the pane there; keep ⌥ held and press again to carry it further (while typing, ⌥← ⌥→ still jump by words) |
 | ⇧⌘← / ⇧⌘→ | panes | move the focused pane left / right |
 | ⌘S | anywhere | hide or show the left sidebar (and launch box) |
 | ⌘B | anywhere | hide or show the right inspector (⌘I works too) |
@@ -89,7 +90,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 Click selects; a click on a project or folder rolls it out or in, its ⋯ button renames it. Double-click opens an agent. The mouse wheel scrolls the agent's history (tmux scrollback); dragging selects text there and copies it to the clipboard. Hold **Option** while dragging to select in the terminal itself: the selection is copied when you let go (as in iTerm), and ⌘C copies it again.
 
 - Drag rows in the sidebar to rearrange it: projects above or below each other, folders within a project or into another project on the same host, agents within a folder or into another folder (also out of "Other agents"). A line shows where a row lands; a lit-up row means into it. Kuna remembers where you put agents.
-- Drag a pane's header onto another pane to swap the two (⇧← / ⇧→ does the same from the keyboard).
+- Drag a pane's header onto another pane to swap the two (⌥ arrows do the same from the keyboard).
 - Drag the inner edge of the sidebar or the inspector to resize it; double-click the edge for the default width. Widths are remembered.
 - In the plot viewer, pinch to zoom, drag to pan, and double-click to zoom in on a spot (double-click again to fit).
 

@@ -13,6 +13,7 @@ import {
   launchDraft,
   leaveInsert,
   moveInGrid,
+  movePaneInGrid,
   moveSelection,
   nudgeSelection,
   renameSelection,
@@ -284,6 +285,11 @@ function paneKey(ev: KeyboardEvent): void {
     // the right panel that slid in goes away; ← and Esc do only that
     set({ inspectorPeek: false })
     if (ev.key === 'ArrowLeft' || ev.key === 'Escape') return stop(ev)
+  }
+  if (ev.altKey && !ev.metaKey && !ev.ctrlKey && ev.key.startsWith('Arrow')) {
+    // ⌥ arrows carry the pane that way, swapping it with the one there
+    stop(ev)
+    return movePaneInGrid(ev.key === 'ArrowLeft' ? 'left' : ev.key === 'ArrowRight' ? 'right' : ev.key === 'ArrowUp' ? 'up' : 'down')
   }
   switch (ev.key) {
     case 'ArrowLeft':
