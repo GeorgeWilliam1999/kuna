@@ -202,6 +202,12 @@ export function FolderDialog({ projectId, initialPath }: { projectId: string; in
     toast(`Added ${clean}. Start typing to launch an agent there.`)
   }
 
+  /** A listed folder into the path: its folders are listed next, and Enter adds it. */
+  const fill = (d: string): void => {
+    setPath(cleanTypedPath(d + '/'))
+    setPick(-1)
+  }
+
   useOverlayKeys((ev) => {
     if ((ev.target as HTMLElement)?.dataset?.role !== 'path') {
       if (ev.key === 'Enter') {
@@ -219,14 +225,12 @@ export function FolderDialog({ projectId, initialPath }: { projectId: string; in
         return true
       case 'Tab': {
         const m = matches[pick >= 0 ? pick : 0]
-        if (m) {
-          setPath(cleanTypedPath(m + '/'))
-          setPick(-1)
-        }
+        if (m) fill(m)
         return true
       }
       case 'Enter':
-        if (pick >= 0 && matches[pick]) submit(matches[pick])
+        // a folder picked with ↑ ↓ is filled in first; the next Enter adds it
+        if (pick >= 0 && matches[pick]) fill(matches[pick])
         else submit(path)
         return true
     }
@@ -264,13 +268,13 @@ export function FolderDialog({ projectId, initialPath }: { projectId: string; in
               requestAnimationFrame(() => pathInput.current?.setSelectionRange(caret, caret))
             }}
           />
-          <span className="field-note">Tab completes · ↑ ↓ pick · Enter adds</span>
+          <span className="field-note">Tab completes · ↑ ↓ pick, Enter fills it in · Enter adds</span>
         </label>
         <div className="host-list dirs" ref={list}>
           {loading && !dirs.length && <div className="dim pad">Listing {parent} on {host === LOCAL_HOST ? 'this Mac' : host}…</div>}
           {!loading && !matches.length && <div className="dim pad">No folders here.</div>}
           {matches.map((d, i) => (
-            <div key={d} className={`host-opt ${i === pick ? 'on' : ''}`} onClick={() => setPath(cleanTypedPath(d + '/'))} onDoubleClick={() => submit(d)}>
+            <div key={d} className={`host-opt ${i === pick ? 'on' : ''}`} onClick={() => fill(d)} onDoubleClick={() => submit(d)}>
               <span>{d.slice(d.lastIndexOf('/') + 1)}</span>
               <span className="dim">{d}</span>
             </div>
