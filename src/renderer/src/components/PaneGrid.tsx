@@ -68,10 +68,9 @@ function MediaCount({ agentKey }: { agentKey: string }): React.JSX.Element | nul
   )
 }
 
-function PaneHeader({ agentKey, index }: { agentKey: string; index: number }): React.JSX.Element {
+function PaneHeader({ agentKey, index, unread }: { agentKey: string; index: number; unread: boolean }): React.JSX.Element {
   const a = useKuna((s) => s.agents[agentKey])
   const d = useKuna((s) => s.details[agentKey])
-  const lastSeen = useKuna((s) => s.lastSeen)
   const projects = useKuna((s) => s.projects)
   const agents = useKuna((s) => s.agents)
   const hosts = useKuna((s) => s.hosts)
@@ -112,7 +111,12 @@ function PaneHeader({ agentKey, index }: { agentKey: string; index: number }): R
       )}
       <span className="ph-title">{armed ? 'Press Ctrl+X again to kill this agent' : agentTitle(a, d)}</span>
       <MediaCount agentKey={agentKey} />
-      {isUnread(a, lastSeen) && <span className="unread-mark" />}
+      {unread && (
+        <span className="ph-unread" title="New since you last looked · landing on this tab again clears it">
+          <span className="unread-mark" />
+          new
+        </span>
+      )}
       {subs > 0 && <span className="chip" title="Subagents running">{subs} sub</span>}
       {todos.length > 0 && (
         <span className="chip" title="Tasks done">
@@ -170,6 +174,7 @@ function AgentPane({ agentKey, index }: { agentKey: string; index: number }): Re
   const slot = useRef<HTMLDivElement>(null)
   const focused = useKuna((s) => s.zone === 'pane' && s.paneIndex === index)
   const typing = useKuna((s) => s.zone === 'pane' && s.paneIndex === index && s.mode === 'insert')
+  const unread = useKuna((s) => !!s.agents[agentKey] && isUnread(s.agents[agentKey], s.lastSeen))
   const escHint = useKuna((s) => s.escHint)
   const projects = useKuna((s) => s.projects)
   const agents = useKuna((s) => s.agents)
@@ -203,7 +208,7 @@ function AgentPane({ agentKey, index }: { agentKey: string; index: number }): Re
 
   return (
     <section
-      className={`pane ${focused ? 'focused' : ''} ${typing ? 'typing' : ''} ${dropping ? 'drop-target' : ''}`}
+      className={`pane ${focused ? 'focused' : ''} ${typing ? 'typing' : ''} ${unread ? 'unread' : ''} ${dropping ? 'drop-target' : ''}`}
       style={{ '--repo': color } as React.CSSProperties}
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes(TAB_DRAG)) return
@@ -234,7 +239,7 @@ function AgentPane({ agentKey, index }: { agentKey: string; index: number }): Re
         }
       }}
     >
-      <PaneHeader agentKey={agentKey} index={index} />
+      <PaneHeader agentKey={agentKey} index={index} unread={unread} />
       <QuestionStrip agentKey={agentKey} />
       <div className="pane-body" ref={slot} />
       {typing && <div className="typing-hint">{escHint ? 'Esc again to stop typing' : 'typing · Enter sends · Esc Esc stops'}</div>}

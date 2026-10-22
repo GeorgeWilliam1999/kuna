@@ -11,7 +11,7 @@ import { StatusBar } from './components/StatusBar'
 import { Toasts } from './components/Toasts'
 import { agentTitle } from './format'
 import { installKeys } from './keys'
-import { flushState, get, isHidden, loadState, noteReported, markSeen, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
+import { flushState, get, isHidden, loadState, noteReported, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
 import { restyleTerminals } from './terminals'
 import { applyFonts } from './fonts'
 import { applyTheme, themeById } from './themes'
@@ -60,10 +60,6 @@ function wireMain(): () => void {
       pruneLastSeen()
       pruneArrangement()
       reopenTabs()
-      // the agent you are looking at is never "unread"
-      const s = get()
-      const focused = s.zone === 'pane' ? s.tabs[s.paneIndex] : undefined
-      if (focused && agents[focused] && agents[focused].attnTs > (s.lastSeen[focused] ?? 0)) markSeen(focused)
     }),
     window.kuna.agents.onDetails((key, details) => set((s) => ({ details: { ...s.details, [key]: details } }))),
     window.kuna.usage.onUpdate((usage) => set({ usage }))

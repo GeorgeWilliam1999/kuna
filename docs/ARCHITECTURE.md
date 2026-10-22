@@ -86,7 +86,7 @@ Claude Code (2.1.80+) passes `rate_limits.five_hour` / `seven_day` (`used_percen
 
 ## Unread
 
-The hook script stamps `attn` when an agent stops (`Stop`), asks (`PermissionRequest`, permission `Notification`) or exits. The renderer keeps `lastSeen[agent]` (persisted); an agent is unread while `attn > lastSeen`. Focusing a pane marks it seen. Seen markers for vanished agents are pruned only after the host has reported a complete list.
+The hook script stamps `attn` when an agent stops (`Stop`), asks (`PermissionRequest`, permission `Notification`) or exits. The renderer keeps `lastSeen[agent]` (persisted); an agent is unread while `attn > lastSeen`. Landing on a tab (arrows, ⌘1–9, a click, opening it) marks it seen; staying on it does not, so a reply that arrives on the tab you are on stays marked, its header lit, until you leave and come back. Seen markers for vanished agents are pruned only after the host has reported a complete list.
 
 ## Plots and PDFs
 

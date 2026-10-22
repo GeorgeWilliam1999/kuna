@@ -702,6 +702,24 @@ button.mini {
   font: var(--fs-mono) var(--mono);
   color: var(--faint);
 }
+/* a reply you have not looked at: the tab's header lights up until you land on it again */
+.pane.unread .pane-head {
+  background: color-mix(in srgb, var(--unread) 24%, var(--panel));
+  box-shadow: inset 0 -2px 0 var(--unread);
+}
+.pane.unread.focused .pane-head {
+  background: color-mix(in srgb, var(--unread) 24%, var(--raised));
+}
+.pane.unread .ph-index,
+.ph-unread {
+  color: var(--unread);
+}
+.ph-unread {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
 .ph-repo {
   font-weight: 600;
 }

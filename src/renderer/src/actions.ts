@@ -83,8 +83,11 @@ export function focusPane(index: number): void {
   if (!s.tabs.length) return
   const i = Math.max(0, Math.min(s.tabs.length - 1, index))
   if (cameFrom && s.tabs[i] !== cameFrom.key) cameFrom = null
+  // landing on a tab marks its agent seen; staying on it does not, so a reply
+  // that arrives while you are there stays marked until you leave and come back
+  const arriving = s.zone !== 'pane' || s.tabs[s.paneIndex] !== s.tabs[i]
   set({ zone: 'pane', paneIndex: i, mode: 'nav', sidebarPeek: false, inspectorPeek: false })
-  markSeen(s.tabs[i])
+  if (arriving) markSeen(s.tabs[i])
 }
 
 export function focusSidebar(): void {
