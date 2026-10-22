@@ -16,7 +16,7 @@ The goal: the user ends up with Kuna running and knows how to start their first 
    | tmux, for agents on this Mac | `tmux -V` | `brew install tmux` |
    | Claude Code, signed in | `claude --version` | install it the way Claude Code's docs describe; the user signs in by running `claude` once. Never sign in for them. |
 
-2. **Install**, from the repository root: `npm install`. Its postinstall rebuilds `node-pty` for Electron. If `npm run dev` later reports that Electron failed to install, run `node node_modules/electron/install.js`.
+2. **Install**, from the repository root: `npm install`. Its postinstall rebuilds `node-pty` for Electron. If `npm run dev` later reports that Electron failed to install, run `node node_modules/electron/install.js && sh scripts/dev-app.sh` (the second part names the development app Kuna in the Dock and ⌘Tab).
 
 3. **Verify.**
    - `npm run typecheck` and `npm test` must pass. The integration test uses its own tmux server (`KUNA_TMUX_SOCKET`) and a temporary `HOME`, so it never touches the user's agents.

@@ -10,7 +10,7 @@ npm run dist         # unsigned Kuna.app in release/
 sh scripts/smoke.sh  # open the app once with a throwaway profile; prints window/host checks and a screenshot path
 ```
 
-The icon is drawn in `build/icon.svg`; `npm run icon` renders it to `build/icon.png` and `build/icon.icns`. `npm install` also renames `node_modules`' Electron.app to Kuna and gives it the icon (`scripts/dev-app.sh`), since macOS shows that bundle's name in the menu bar and Dock during `npm run dev`.
+The icon is drawn in `build/icon.svg`; `npm run icon` renders it to `build/icon.png` and `build/icon.icns`. `npm install` also turns `node_modules`' Electron.app into Kuna.app, with Kuna's name and icon, and points Electron's `path.txt` at it (`scripts/dev-app.sh`), since during `npm run dev` macOS takes the menu bar name from that bundle's Info.plist and the Dock and ⌘Tab name from its folder name. Run the script again after anything reinstalls Electron.
 
 Node 22+ is required (electron-vite and vitest). The integration test needs `tmux` on your PATH and is skipped otherwise.
 
