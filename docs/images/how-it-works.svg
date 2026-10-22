@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 290">
+  <!-- How Kuna works, for the README. Rendered to how-it-works.png with:
+       electron scripts/render-svg.cjs docs/images/how-it-works.svg docs/images/how-it-works.png 1800x580 -->
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#4d8dff"/>
+    </marker>
+    <marker id="headdim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#8590a8"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; text-anchor: middle; }
+    .title { font-size: 20px; font-weight: 600; fill: #dfe6f5; }
+    .sub { font-size: 14.5px; fill: #8590a8; }
+    .mono { font-family: ui-monospace, Menlo, monospace; font-size: 14px; }
+    .label { font-size: 13.5px; fill: #8590a8; }
+    .box { fill: #0f1420; stroke: #26304a; stroke-width: 1.5; }
+  </style>
+
+  <rect x="0.75" y="0.75" width="898.5" height="288.5" rx="16" fill="#05070c" stroke="#1a2133" stroke-width="1.5"/>
+
+  <!-- each host: this Mac or any SSH machine -->
+  <rect x="380" y="26" width="496" height="238" rx="12" fill="none" stroke="#26304a" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text class="label" x="400" y="252" style="text-anchor: start">on each host: this Mac or any SSH machine</text>
+
+  <!-- Kuna -->
+  <rect x="20" y="100" width="156" height="90" rx="10" fill="#0f1420" stroke="#4d8dff" stroke-width="1.5"/>
+  <text class="title" x="98" y="140">Kuna</text>
+  <text class="sub" x="98" y="166">on your Mac</text>
+
+  <!-- the helper -->
+  <rect class="box" x="400" y="100" width="190" height="90" rx="10"/>
+  <text class="title" x="495" y="140">kuna helper</text>
+  <text class="sub mono" x="495" y="166">~/.kuna</text>
+
+  <!-- what it watches -->
+  <rect class="box" x="660" y="50" width="196" height="78" rx="10"/>
+  <text class="title" x="758" y="84">your agents</text>
+  <text class="sub mono" x="758" y="109">tmux -L kuna</text>
+  <rect class="box" x="660" y="150" width="196" height="78" rx="10"/>
+  <text class="title" x="758" y="184">Claude sessions</text>
+  <text class="sub mono" x="758" y="209">claude --bg</text>
+
+  <!-- Kuna to the helper, and the stream back -->
+  <path d="M178 128 H396" stroke="#4d8dff" stroke-width="2" fill="none" marker-end="url(#head)"/>
+  <text class="label" x="278" y="116">one ssh connection per host</text>
+  <path d="M398 162 H180" stroke="#8590a8" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#headdim)"/>
+  <text class="label" x="278" y="184">status, context, questions</text>
+
+  <!-- the helper to agents and sessions -->
+  <path d="M592 132 C626 132 624 89 656 89" stroke="#4d8dff" stroke-width="2" fill="none" marker-end="url(#head)"/>
+  <path d="M592 158 C626 158 624 189 656 189" stroke="#4d8dff" stroke-width="2" fill="none" marker-end="url(#head)"/>
+</svg>

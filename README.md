@@ -23,13 +23,7 @@
 
 ## How it works
 
-```mermaid
-flowchart LR
-  K["Kuna<br/>on your Mac"] -- "ssh: one connection per host" --> H["kuna helper<br/>~/.kuna on the host"]
-  H --> T["tmux -L kuna<br/>your agents"]
-  H --> B["Claude background<br/>sessions"]
-  H -. "live status, context, questions" .-> K
-```
+![Kuna on your Mac keeps one ssh connection to the kuna helper on each host; the helper runs your agents in tmux, watches your Claude background sessions, and streams their status, context and questions back](docs/images/how-it-works.png)
 
 - **Agents live on their host, in tmux.** Kuna installs one small shell script in `~/.kuna` and starts each agent in its own tmux server there. Quit Kuna, lose Wi-Fi, close the laptop: the agents keep going, and Kuna picks them up again.
 - **One quiet ssh stream per host** reports what every agent is doing, whether it needs you and how full its context is, from Claude Code's own hooks and transcripts. No cloud service in between; your `~/.ssh/config`, keys and jump hosts work as in a terminal.
