@@ -1,65 +1,76 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <!-- Kuna: a marten (kuna, in Slovak) biting through the LHC ring. -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#18223d"/>
-      <stop offset="1" stop-color="#080b14"/>
-    </linearGradient>
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="14"/>
     </filter>
-    <filter id="spark-glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur stdDeviation="10"/>
+    <filter id="bolt-glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="12"/>
     </filter>
   </defs>
 
-  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="#000"/>
 
   <g transform="translate(-28 0)">
     <!-- the ring, bitten through at the upper right -->
     <g transform="rotate(-21 540 600)">
-      <circle cx="540" cy="600" r="180" fill="none" stroke="#4d8dff" stroke-width="54" stroke-dasharray="1052 79" opacity="0.55" filter="url(#glow)"/>
+      <circle cx="540" cy="600" r="180" fill="none" stroke="#3d7bff" stroke-width="56" stroke-dasharray="1052 79" opacity="0.6" filter="url(#glow)"/>
       <circle cx="540" cy="600" r="180" fill="none" stroke="#4d8dff" stroke-width="46" stroke-dasharray="1052 79"/>
-      <circle cx="540" cy="600" r="180" fill="none" stroke="#b9d2ff" stroke-width="5" stroke-dasharray="1052 79" opacity="0.8"/>
+      <circle cx="540" cy="600" r="180" fill="none" stroke="#bcd4ff" stroke-width="5" stroke-dasharray="1052 79" opacity="0.85"/>
     </g>
 
-    <!-- sparks from the cut -->
-    <g transform="translate(706 478)">
-      <circle r="30" fill="#ffb000" opacity="0.7" filter="url(#spark-glow)"/>
-      <path d="M0 -40 L8 -8 L40 0 L8 8 L0 40 L-8 8 L-40 0 L-8 -8 Z" fill="#ffd36b"/>
+    <!-- lightning out of the cut -->
+    <g transform="translate(706 500) rotate(-24)">
+      <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffae00" opacity="0.85" filter="url(#bolt-glow)"/>
+      <path d="M14 -72 L-28 8 L2 8 L-16 74 L36 -16 L6 -16 L28 -72 Z" fill="#ffd84a"/>
+      <path d="M16 -52 L-10 2 L8 2 L0 34 L20 -8 L4 -8 L18 -52 Z" fill="#fff6d0"/>
     </g>
 
-    <!-- the marten on top of the ring, biting it: drawn facing right on y=0, then placed -->
+    <!-- the marten on top of the ring, jaws on the cut end: drawn facing right on y=0, then placed -->
     <g transform="translate(421 435) rotate(-5) scale(1.1) translate(-29 0)">
       <!-- far legs -->
-      <path d="M176 -40 C180 -26 184 -14 186 -4 L186 0 L212 0 C212 -6 206 -8 202 -10 C200 -20 200 -30 200 -36 Z" fill="#4a290f"/>
-      <path d="M40 -52 C58 -58 76 -56 84 -48 C80 -36 72 -28 66 -22 C64 -14 64 -8 66 -2 L68 0 L40 0 C38 -6 40 -12 44 -18 C34 -28 32 -40 40 -52 Z" fill="#4a290f"/>
+      <path d="M176 -40 C180 -26 184 -14 186 -6 C186 -2 188 0 192 0 L210 0 C214 0 214 -6 208 -8 L202 -10 C200 -20 200 -30 200 -36 Z" fill="#5c3415" transform="translate(-34 0)"/>
+      <path d="M40 -52 C58 -58 76 -56 84 -48 C80 -38 72 -30 64 -26 C62 -18 62 -10 64 -4 C66 -2 68 0 70 0 L46 0 C44 -8 44 -16 46 -24 C34 -30 32 -42 40 -52 Z" fill="#5c3415"/>
       <!-- tail, held out behind -->
-      <path d="M-12 -104 C-52 -124 -96 -130 -128 -148 C-146 -160 -156 -176 -152 -194 C-174 -178 -180 -150 -164 -130 C-144 -106 -96 -90 -56 -84 C-40 -82 -30 -82 -24 -86 Z" fill="#6e4019"/>
-      <!-- body and head, the head bent down to bite -->
+      <path d="M-12 -104 C-52 -126 -98 -134 -132 -152 C-152 -162 -164 -180 -158 -202 C-178 -194 -190 -168 -180 -146 C-166 -118 -116 -96 -60 -86 C-40 -82 -28 -84 -22 -88 Z" fill="#8c4f21"/>
+      <!-- body and neck -->
       <path d="M-15 -100
                C10 -122 50 -136 90 -136
-               C130 -136 162 -128 182 -118
-               C204 -108 224 -92 236 -74
-               C246 -62 254 -46 258 -28
-               C262 -12 264 6 264 24
-               C256 30 246 30 240 26
-               C236 16 232 6 226 -2
-               C220 -10 216 -16 210 -24
-               C190 -46 150 -58 100 -58
+               C130 -136 162 -128 184 -116
+               C214 -102 236 -84 248 -62
+               C254 -50 252 -36 244 -26
+               L214 -26
+               C208 -32 206 -36 204 -40
+               C186 -52 150 -58 100 -58
                C60 -58 30 -52 10 -50
                C-12 -52 -28 -70 -28 -86
-               C-26 -92 -22 -96 -15 -100 Z" fill="#ad6c33"/>
+               C-26 -92 -22 -96 -15 -100 Z" fill="#c27d40"/>
+      <!-- light along the back -->
+      <path d="M-12 -100 C18 -122 58 -132 94 -132 C134 -132 164 -122 188 -110" fill="none" stroke="#e3a86c" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
       <!-- near legs -->
-      <path d="M194 -44 C198 -30 200 -16 202 -4 L202 0 L232 0 C232 -6 226 -8 222 -10 C220 -18 220 -24 220 -28 C210 -34 200 -38 194 -44 Z" fill="#6e4019"/>
-      <path d="M2 -58 C22 -64 44 -62 56 -54 C52 -42 42 -34 32 -30 C30 -20 30 -10 32 -4 L36 0 L12 0 C12 -8 14 -16 16 -26 C2 -32 -4 -44 2 -58 Z" fill="#6e4019"/>
-      <!-- throat bib -->
-      <path d="M240 26 C236 16 232 6 226 -2 C220 -10 216 -16 210 -24 C214 -36 222 -44 232 -46 C240 -28 248 -6 254 20 C250 26 245 28 240 26 Z" fill="#f3dfb2"/>
-      <!-- ear, eye, nose -->
-      <path d="M216 -84 C212 -102 222 -116 236 -114 C244 -102 242 -88 234 -78 Z" fill="#8a5326"/>
-      <path d="M222 -86 C220 -98 226 -108 234 -106 C238 -98 236 -90 230 -84 Z" fill="#e9cf9c"/>
-      <circle cx="250" cy="-24" r="6.5" fill="#1b1209"/>
-      <circle cx="262" cy="23" r="7" fill="#1b1209"/>
+      <path d="M194 -44 C198 -30 200 -16 202 -6 C202 -2 204 0 208 0 L228 0 C233 0 233 -6 228 -8 L222 -10 C220 -18 220 -24 220 -30 C210 -34 200 -38 194 -44 Z" fill="#8c4f21" transform="translate(-30 -2)"/>
+      <path d="M2 -58 C22 -64 44 -62 56 -54 C52 -42 42 -34 32 -30 C30 -20 30 -12 32 -6 C33 -2 35 0 38 0 L16 0 C13 0 12 -4 13 -8 C14 -14 15 -20 16 -26 C2 -32 -4 -44 2 -58 Z" fill="#8c4f21"/>
+      <!-- head, bent down, the cut end between its jaws (drawn facing +x, then turned) -->
+      <g transform="translate(226.7 -13.5) rotate(45) scale(1.35)">
+        <path d="M-34 -2
+                 C-30 -22 -14 -32 4 -30
+                 C20 -28 34 -20 44 -12
+                 C50 -8 56 -4 56 2
+                 C54 6 48 8 42 8
+                 L30 8
+                 C36 12 42 16 44 20
+                 C36 26 24 26 14 24
+                 C0 22 -18 18 -30 10 Z" fill="#c27d40"/>
+        <!-- bib under the jaw -->
+        <path d="M18 22 C4 24 -14 20 -32 10 C-34 18 -30 26 -20 30 C-6 34 8 30 18 22 Z" fill="#f5e3b8"/>
+        <!-- ear -->
+        <path d="M-26 -16 C-42 -28 -40 -48 -24 -50 C-14 -44 -10 -32 -12 -22 Z" fill="#9a5c2a"/>
+        <path d="M-24 -20 C-35 -29 -34 -43 -23 -45 C-16 -40 -14 -32 -15 -25 Z" fill="#f0d6a2"/>
+        <!-- eye and nose -->
+        <circle cx="16" cy="-14" r="5" fill="#120a04"/>
+        <circle cx="17.6" cy="-15.6" r="1.6" fill="#fff"/>
+        <circle cx="54" cy="0" r="4.5" fill="#120a04"/>
+      </g>
     </g>
   </g>
 </svg>
