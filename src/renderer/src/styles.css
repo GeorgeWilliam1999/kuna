@@ -718,7 +718,7 @@ button.mini {
   }
 }
 @container (max-width: 470px) {
-  .pane-head .chip,
+  .pane-head .chip:not(.media-count),
   .pane-head .ph-repo {
     display: none;
   }
@@ -741,6 +741,18 @@ button.mini {
   color: var(--waiting);
 }
 
+/* how many plots Space would show, in a pane header; a click opens them */
+.chip.media-count {
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.chip.media-count b {
+  color: var(--text);
+  font-weight: 600;
+}
+.chip.media-count:hover {
+  border-color: var(--accent);
+}
 .chip {
   font: var(--fs-mono) var(--mono);
   color: var(--dim);

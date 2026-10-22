@@ -58,7 +58,7 @@ A single **Esc** goes to the agent, on a pane or while typing, as in a terminal:
 
 | Keys | Does |
 | --- | --- |
-| Space | preview the plots and PDFs of the agent's latest reply, fitted to the window: all PDFs first, then the images (newest reply first, in the order the reply names them) |
+| Space | preview the plots and PDFs of the agent's latest reply, fitted to the window: all PDFs first, then the images (newest reply first, in the order the reply names them). A pane's header counts them ("2 pdf 3 img"); clicking the count opens them too |
 | → / ← | older / newer file (with no comment typed); past the last one, → loads an earlier reply's files, and the folder scan comes last |
 | ↑ ↓, PgUp PgDn | scroll (PDF pages, zoomed plots) |
 | *type* | write a comment on the plot in view, right away; while it has text the arrows move between its letters |
