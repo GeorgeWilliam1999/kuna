@@ -118,10 +118,10 @@ function PaneHeader({ agentKey, index }: { agentKey: string; index: number }): R
       )}
       {d?.model && <span className="chip dim">{shortModel(d.model)}</span>}
       {a.status === 'exited' && <span className="ph-hint">{a.kind === 'claude' ? 'stopped · Enter reopens' : '⇧⌘R resume'}</span>}
-      {(a.status === 'working' || a.status === 'background') && a.detail && <span className="ph-detail">{a.detail}</span>}
-      <span className={`ph-status st-${a.status}`}>
+      {/* one word here; what it is doing in full is in the tooltip and the inspector */}
+      <span className={`ph-status st-${a.status}`} title={[doingText(a), a.detail].filter(Boolean).join('\n')}>
         <StatusDot status={a.status} />
-        {doingText(a)}
+        {doingText(a, true)}
       </span>
     </div>
   )

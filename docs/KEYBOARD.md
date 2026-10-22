@@ -111,6 +111,6 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 | small square | open in a pane |
 | amber or red gauge | its context is getting long (half the window, or 300k tokens) or almost full (80%; Claude Code will compact it soon) |
 
-A pane's header shows the folder, the agent's name, how many PDFs and images Space would show, its context, model and status.
+A pane's header shows the folder, the agent's name, how many PDFs and images Space would show, its context, model and status in a word ("running", "editing", "2 jobs"). What it is doing in full is in the status's tooltip and in the inspector.
 
 The inspector on the right (⌘B) shows the focused agent's context use, model, permission mode, token counts, task list, running subagents, recent tool calls, files it changed, and the exact command to attach from any terminal. Its **Compact** button runs `/compact` in the agent (it waits while the agent is mid-turn or asking you; anything half-typed is cleared first, and Ctrl+Y in the agent brings it back).

@@ -878,15 +878,6 @@ button.mini {
   color: var(--dim);
   font-size: var(--fs-small);
 }
-.ph-detail {
-  color: var(--faint);
-  font-size: var(--fs-small);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex: 0 1 auto !important;
-  max-width: 40%;
-}
 .insp-need {
   background: color-mix(in srgb, var(--waiting) 10%, transparent);
   border-top: 1px solid color-mix(in srgb, var(--waiting) 35%, transparent);
