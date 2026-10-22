@@ -92,3 +92,21 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 - Drag a pane's header onto another pane to swap the two (⇧← / ⇧→ does the same from the keyboard).
 - Drag the inner edge of the sidebar or the inspector to resize it; double-click the edge for the default width. Widths are remembered.
 - In the plot viewer, pinch to zoom, drag to pan, and double-click to zoom in on a spot (double-click again to fit).
+
+## Reading the screen
+
+| In the sidebar | Means |
+| --- | --- |
+| blue dot | working: mid-turn. The right column says what on ("running", "editing", "subagent") |
+| hollow blue dot | between turns with work of its own: a scheduled check ("next 12:05") or jobs running ("2 jobs") |
+| amber dot | needs you: a permission prompt or a question, shown in amber under the row. Open it and press the number of your answer |
+| grey dot | idle, waiting for the next instruction |
+| red dot | failed |
+| hollow grey dot | exited or stopped. Enter brings a stopped background session back; ⇧⌘R resumes a Kuna agent's conversation |
+| diamond | finished or asked something since you last looked |
+| small square | open in a pane |
+| amber or red gauge | its context is getting long (half the window, or 300k tokens) or almost full (80%; Claude Code will compact it soon) |
+
+A pane's header shows the folder, the agent's name, how many PDFs and images Space would show, its context, model and status.
+
+The inspector on the right (⌘B) shows the focused agent's context use, model, permission mode, token counts, task list, running subagents, recent tool calls, files it changed, and the exact command to attach from any terminal. Its **Compact** button runs `/compact` in the agent (it waits while the agent is mid-turn or asking you; anything half-typed is cleared first, and Ctrl+Y in the agent brings it back).
