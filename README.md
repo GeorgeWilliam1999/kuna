@@ -40,16 +40,22 @@ flowchart LR
 ### Projects → folders → agents
 Group agents by host and repository. Pick a folder, type the task, press Enter: a new agent opens in a pane and the panes re-tile themselves.
 
+<img src="docs/images/doc-sidebar.png" width="340" alt="The sidebar: projects, folders and agents in every state, and a task typed into the launch box">
+
 ### Your Claude background sessions, too
 Everything started with `claude --bg` shows up under its folder with what it's doing and the question it's waiting on. Answer with a number key without opening it.
+
+![A session asking which binning to use, with its answers in the inspector](docs/images/doc-question.png)
 
 ### Keyboard first
 Arrows move between the sidebar and the panes, typing talks to the focused agent, Esc Esc stops. Everything else is one shortcut away: ⌘/ lists them.
 
+![The shortcut overview](docs/images/doc-help.png)
+
 ### Plots and PDFs on Space
 The figures from the agent's latest reply, PDFs first, sharp and zoomable. Each pane counts them in its header. Type a comment and it goes to the agent; ⌘S saves the file.
 
-![The plot viewer](docs/images/doc-media-png.png)
+![The plot viewer: a PDF from the agent's reply, a comment being written to it, and Save to Downloads](docs/images/doc-viewer.png)
 
 ### Status you can trust
 Working, waiting on a job, needs you, idle or failed, and what it's running right now. Context gauges warn before Claude Code compacts on its own, and your plan usage sits in the status bar.

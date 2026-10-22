@@ -18,6 +18,8 @@ While Kuna is open it keeps one `ssh <host> kuna watch` stream per host. It prin
 
 If a host runs Claude Code's background agents (`claude --bg`, `claude agents`), Kuna lists them next to its own agents. It reads `~/.claude/jobs/*/state.json` (state, what the session is doing, the question it waits on, its transcript) and the daemon's roster for which ones are alive — no extra processes on the host. Sessions are placed under the deepest folder of a project that contains their working directory (worktrees under `.claude/worktrees` count as their repository); the rest go under **Other agents**, where ⌘O on one of them offers its directory as a new folder.
 
+![A background session asking a question; the inspector lists its answers](images/doc-question.png)
+
 - **Enter** opens a session with `claude attach <id>`; closing the pane only detaches.
 - A session waiting on you shows its question or permission request in amber under its row, in a strip on its pane and in the inspector. Press the number of your answer on the pane.
 - **Ctrl+X Ctrl+X** runs `claude stop` and takes the session off the list, without asking. The conversation is kept: **⌘Z** brings it back, and reviving it from `claude agents` shows it again by itself. Kuna never runs `claude rm`. **⇧⌘R** runs `claude respawn`.

@@ -1,5 +1,7 @@
 # Keyboard
 
+![Every shortcut, as ⌘/ shows them](images/doc-help.png)
+
 Kuna has two modes. The status bar's left corner always says which one you are in.
 
 - **navigate** — arrows move between the sidebar and the panes. Nothing you press reaches an agent.
@@ -8,8 +10,6 @@ Kuna has two modes. The status bar's left corner always says which one you are i
 You enter typing mode by starting to type on a pane (or pressing Enter on it). You leave it by sending (**Enter**) or abandoning (**Esc Esc**).
 
 Launching works the same way from the sidebar: start typing with a folder selected and the text goes into the launch box under the sidebar; **Enter** starts a new agent with it. While the box has text, **← →** move through it and **↑ ↓** between its lines (⌥ and ⌘ arrows jump by word and line, ⇧ arrows select); **↑ ↓** past the first or last line pick the folder: the text stays in the box and the agent starts in the folder that is selected when you press Enter. Backspace edits the box from the sidebar too.
-
-![A pane in typing mode](images/doc-typing.png)
 
 ## Moving around
 
@@ -94,6 +94,8 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 - In the plot viewer, pinch to zoom, drag to pan, and double-click to zoom in on a spot (double-click again to fit).
 
 ## Reading the screen
+
+<img src="images/doc-sidebar.png" width="340" alt="The sidebar in every state">
 
 | In the sidebar | Means |
 | --- | --- |
