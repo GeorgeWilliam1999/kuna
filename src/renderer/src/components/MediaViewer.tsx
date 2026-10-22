@@ -26,8 +26,9 @@ interface Loaded {
   path: string
   url?: string
   data?: Uint8Array
-  /** a Markdown file, rendered and sanitised */
+  /** a Markdown file, rendered and sanitised, and its source */
   html?: string
+  text?: string
   error?: string
 }
 
@@ -123,6 +124,8 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
   const [commenting, setCommenting] = useState(false)
   const [sending, setSending] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  // Markdown as its source text instead of rendered (⌘U), kept while the viewer is open
+  const [mdSource, setMdSource] = useState(false)
 
   /** Load pages until something new turns up (or nothing is left), and append it. */
   const loadMore = useCallback(
@@ -175,7 +178,8 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       if ('error' in res) return setFile({ path: current.path, error: res.error })
       if (current.kind === 'pdf') return setFile({ path: current.path, data: res.data })
       if (current.kind === 'md') {
-        setFile({ path: current.path, html: renderMarkdown(new TextDecoder().decode(res.data)) })
+        const text = new TextDecoder().decode(res.data)
+        setFile({ path: current.path, html: renderMarkdown(text), text })
         const after = items?.[index + 1]
         if (after) void window.kuna.media.fetch(host, after.path, stampOf(after))
         return
@@ -219,7 +223,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
   // the pictures and diagrams of a Markdown file, once it is on screen
   useEffect(() => {
     const root = mdRoot.current
-    if (file?.html == null || !root || !host) return
+    if (file?.html == null || mdSource || !root || !host) return
     let live = true
     const urls: string[] = []
     const keep = (u: string[]): void => {
@@ -232,7 +236,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       live = false
       urls.forEach((x) => URL.revokeObjectURL(x))
     }
-  }, [file?.html, file?.path, host])
+  }, [file?.html, file?.path, host, mdSource])
 
   useEffect(() => {
     const el = stage.current
@@ -339,6 +343,13 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     el.style.height = `${Math.min(110, el.scrollHeight)}px`
   }, [comment])
 
+  /** the whole Markdown source on the clipboard */
+  const copySource = (): void => {
+    if (file?.text == null) return
+    window.kuna.copyText(file.text)
+    setNote(`Copied ${rel(file.path).split('/').pop()} as Markdown`)
+  }
+
   const save = async (): Promise<void> => {
     if (!current || !host) return
     const res = await window.kuna.media.save(host, current.path, stampOf(current))
@@ -375,8 +386,25 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
           if (current?.kind === 'md') setZoom(1)
           else if (fit) zoomAt((pdf ? 96 / 72 : 1) / fit / zoom)
           return true
-        case 'c':
-          return false // copies what is selected (in a Markdown file, say)
+        case 'c': {
+          // what is selected in a Markdown file, by Kuna itself (as in the panes); else the usual copy
+          const sel = getSelection()
+          if (!mdRoot.current || !sel || sel.isCollapsed || !mdRoot.current.contains(sel.anchorNode)) return false
+          window.kuna.copyText(sel.toString())
+          return true
+        }
+        case 'a': {
+          // all of a Markdown file (rendered or source), ready for ⌘C; with a comment typed, all of the comment
+          const root = mdRoot.current
+          if (inBox && comment) return false
+          if (!root) return true
+          box?.blur()
+          getSelection()?.selectAllChildren(root)
+          return true
+        }
+        case 'u':
+          if (current?.kind === 'md') setMdSource((v) => !v)
+          return true
         case 'o':
           if (current && host) void window.kuna.media.openExternal(host, current.path, stampOf(current))
           return true
@@ -472,8 +500,30 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
           </span>
         )}
         <span className="media-keys">
-          {comment ? '← → move in the comment · Enter sends · Esc Esc discards' : '← → files · type to comment · pinch or ⌘+ ⌘− zoom · ⌘0 fit · ⌘O open · ⌘S save · Space close'}
+          {comment
+            ? '← → move in the comment · Enter sends · Esc Esc discards'
+            : `← → files · type to comment · ${current?.kind === 'md' ? '⌘U source · ' : ''}pinch or ⌘+ ⌘− zoom · ⌘0 fit · ⌘O open · ⌘S save · Space close`}
         </span>
+        {current?.kind === 'md' && (
+          <>
+            <button
+              className="media-save"
+              title="Switch between the rendered page and the Markdown source (⌘U)"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setMdSource((v) => !v)}
+            >
+              {mdSource ? 'Rendered' : 'Source'}
+            </button>
+            <button
+              className="media-save"
+              title="Copy the whole file as Markdown (⌘A then ⌘C copies what you see)"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={copySource}
+            >
+              Copy
+            </button>
+          </>
+        )}
         {current && (
           <button
             className="media-save"
@@ -517,7 +567,14 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
                 />
               )}
               {pdf && <PdfPages pdf={pdf} scale={scale} />}
-              {file?.html != null && <article className="md media-md" ref={mdRoot} style={{ zoom }} dangerouslySetInnerHTML={{ __html: file.html }} />}
+              {file?.html != null &&
+                (mdSource ? (
+                  <article className="md media-md md-source" ref={mdRoot} style={{ zoom }}>
+                    <pre>{file.text}</pre>
+                  </article>
+                ) : (
+                  <article className="md media-md" ref={mdRoot} style={{ zoom }} dangerouslySetInnerHTML={{ __html: file.html }} />
+                ))}
             </div>
           </div>
         )}

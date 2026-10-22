@@ -1764,6 +1764,15 @@ button.mini {
 .media-md .katex {
   font-size: 1.12em;
 }
+/* the Markdown source, as written */
+.media-md.md-source pre {
+  margin: 16px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: calc(var(--fs) + 0.5px) / 1.6 var(--mono);
+  color: var(--text);
+}
 .md-diagram {
   margin: 1.2em 0;
   text-align: center;

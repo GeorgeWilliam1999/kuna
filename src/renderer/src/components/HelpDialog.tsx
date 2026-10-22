@@ -45,6 +45,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['⌘+ ⌘− ⌘0', 'zoom in, out, fit (or pinch; drag to pan)'],
       ['type, Enter', 'in the preview: comment on the plot, sent to the agent'],
       ['⌘O · ⌘S', 'in the preview: open in Preview · save to Downloads'],
+      ['⌘U', 'in the preview: a Markdown file as source or rendered'],
       ['⌥ drag', 'select text in an agent; copied when you let go, ⌘C too'],
       ['⌘K', 'browse skills, agents, commands and CLAUDE.md'],
       ['⌘,', 'colour scheme and fonts']
