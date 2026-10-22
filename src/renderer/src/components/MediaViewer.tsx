@@ -6,7 +6,7 @@ import { viewerOrder } from '@shared/media'
 import type { MediaItem, MediaPage } from '@shared/types'
 import { sendToAgent } from '../actions'
 import { agentTitle, ago, bytes } from '../format'
-import { loadMarkdownImages, renderMarkdown } from '../markdown'
+import { loadMarkdownImages, renderDiagrams, renderMarkdown } from '../markdown'
 import { useKuna } from '../store'
 import { closeOverlay, useOverlayKeys } from './Overlays'
 
@@ -216,13 +216,18 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file?.data])
 
-  // the pictures a Markdown file refers to, once it is on screen
+  // the pictures and diagrams of a Markdown file, once it is on screen
   useEffect(() => {
     const root = mdRoot.current
     if (file?.html == null || !root || !host) return
     let live = true
-    let urls: string[] = []
-    void loadMarkdownImages(root, host, file.path, () => live).then((u) => (live ? (urls = u) : u.forEach((x) => URL.revokeObjectURL(x))))
+    const urls: string[] = []
+    const keep = (u: string[]): void => {
+      if (live) urls.push(...u)
+      else u.forEach((x) => URL.revokeObjectURL(x))
+    }
+    void loadMarkdownImages(root, host, file.path, () => live).then(keep)
+    void renderDiagrams(root, () => live).then(keep)
     return () => {
       live = false
       urls.forEach((x) => URL.revokeObjectURL(x))

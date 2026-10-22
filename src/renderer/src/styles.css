@@ -1732,9 +1732,9 @@ button.mini {
   color: var(--accent);
 }
 
-/* a Markdown file in the viewer: a page of text to read and select */
-.media-md {
-  width: 80ch;
+/* a Markdown file in the viewer: a page of text to read and select (over .md's narrower page) */
+.md.media-md {
+  width: 960px;
   max-width: calc(100vw - 2 * 28px);
   padding: 8px 40px 32px;
   background: var(--panel);
@@ -1755,6 +1755,25 @@ button.mini {
 .media-md pre {
   white-space: pre-wrap;
   word-break: break-word;
+}
+.media-md .math-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.media-md .katex {
+  font-size: 1.12em;
+}
+.md-diagram {
+  margin: 1.2em 0;
+  text-align: center;
+}
+.md-diagram img {
+  background: none;
+}
+.md-diagram-error {
+  color: var(--danger);
+  font-size: var(--fs-small);
 }
 
 /* ------------------------------------------------------ claude browser -- */
