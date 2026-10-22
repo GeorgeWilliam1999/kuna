@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="build/icon.png" width="128" alt="Kuna's icon: a marten biting through the LHC ring">
+  <img src="build/icon.png" width="160" alt="Kuna's icon: a marten biting through the LHC ring">
 </p>
 
 <h1 align="center">Kuna</h1>
