@@ -26,6 +26,10 @@ const MIN_ZOOM = 0.2
 const MAX_ZOOM = 16
 /** largest canvas side in device pixels; past it a page is stretched rather than re-rendered */
 const MAX_CANVAS = 8192
+/** the next file is fetched ahead, unless that would be a large download nobody asked for */
+const PREFETCH_MAX = 40 * 1024 * 1024
+/** a file this large says it is on its way while it comes */
+const SLOW_FILE = 20 * 1024 * 1024
 /** the agent's column beside the file: narrowest, and widest as a share of the window */
 const MIN_SIDE = 320
 const MAX_SIDE_SHARE = 0.7
@@ -284,6 +288,9 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
   }, [refresh])
 
   const current = items?.[index]
+  const prefetch = (it: MediaItem | undefined): void => {
+    if (it && host && it.size <= PREFETCH_MAX) void window.kuna.media.fetch(host, it.path, stampOf(it))
+  }
 
   // the file itself, and the next one in the background
   useEffect(() => {
@@ -301,14 +308,12 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
       if (current.kind === 'md') {
         const text = new TextDecoder().decode(res.data)
         setFile({ path: current.path, html: renderMarkdown(text), text })
-        const after = items?.[index + 1]
-        if (after) void window.kuna.media.fetch(host, after.path, stampOf(after))
+        prefetch(items?.[index + 1])
         return
       }
       url = URL.createObjectURL(new Blob([res.data as BlobPart], { type: res.mime }))
       setFile({ path: current.path, url })
-      const after = items?.[index + 1]
-      if (after) void window.kuna.media.fetch(host, after.path, stampOf(after))
+      prefetch(items?.[index + 1])
     })
     stage.current?.scrollTo(0, 0)
     return () => {
@@ -330,8 +335,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
           sizes.push({ w: v.width, h: v.height })
         }
         if (!cancelled) setPdf({ doc, sizes, total: doc.numPages })
-        const after = items?.[index + 1]
-        if (after && host) void window.kuna.media.fetch(host, after.path, stampOf(after))
+        prefetch(items?.[index + 1])
       })
       .catch((e: unknown) => !cancelled && setFile((f) => (f ? { ...f, error: `Could not render this PDF: ${String(e)}` } : f)))
     return () => {
@@ -763,6 +767,12 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
             </div>
           )}
           {ready && file?.error && <div className="media-msg">{file.error}</div>}
+          {ready && current && current.size > SLOW_FILE && !file?.error && !file?.url && !pdf && file?.html == null && (
+            <div className="media-msg">
+              Loading {rel(current.path).split('/').pop()}, {bytes(current.size)}
+              {host && host !== 'local' ? `, from ${host}` : ''}…
+            </div>
+          )}
           {current && ready && (file?.url || pdf || file?.html != null) && (
             <div className="zoom-area" style={{ padding: PAD }}>
               <div className="zoom-content" ref={content}>

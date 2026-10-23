@@ -7,9 +7,17 @@ import type { ClaudeFileEntry, HostId, MediaItem, MediaPage } from '@shared/type
 import type { AgentService } from './agents'
 import { b64 } from './hosts/exec'
 
-const MAX_MEDIA_BYTES = 80 * 1024 * 1024
+const MB = 1024 * 1024
+/** the largest plot or PDF the viewer reads: it is held in memory, here and in the window */
+const MAX_MEDIA_BYTES = 1024 * MB
 /** a Markdown file past this is not a note to read in the viewer */
-const MAX_MD_BYTES = 4 * 1024 * 1024
+const MAX_MD_BYTES = 4 * MB
+/** files kept for going back and forth, at most this much in all (the newest is kept whatever its size) */
+const CACHE_BYTES = 512 * MB
+const CACHE_FILES = 30
+/** reading a file over ssh: two minutes, plus four seconds a megabyte (a slow link, ~250 KB/s) */
+const readTimeout = (size: number): number => 120_000 + Math.ceil(size / MB) * 4000
+const sizeText = (n: number): string => (n >= 1024 * MB ? `${n / 1024 / MB} GB` : `${n / MB} MB`)
 
 /**
  * Images/PDFs an agent produced or mentioned, and the files behind them.
@@ -79,12 +87,20 @@ export class MediaService {
     const ck = `${hostId}\0${path}\0${stamp}`
     const hit = this.cache.get(ck)
     if (hit && (stamp || Date.now() - hit.at < 5000)) return { data: hit.data, mime: mimeFor(path) }
-    const res = await this.agents.host(hostId).exec(['cat', b64(path)], { timeoutMs: 120_000, maxBytes: max })
+    const size = Number(String(stamp).split(':')[1]) || 0
+    if (size > max) return { error: `File is larger than ${sizeText(max)}.` }
+    const res = await this.agents.host(hostId).exec(['cat', b64(path)], { timeoutMs: readTimeout(size), maxBytes: max })
     if (res.code !== 0) return { error: res.stderr.trim() || `could not read ${path}` }
-    if (res.stdout.length > max) return { error: `File is larger than ${max / 1024 / 1024} MB.` }
+    if (res.stdout.length > max) return { error: `File is larger than ${sizeText(max)}.` }
     this.cache.delete(ck)
     this.cache.set(ck, { data: res.stdout, at: Date.now() })
-    while (this.cache.size > 30) this.cache.delete(this.cache.keys().next().value!)
+    let total = 0
+    for (const v of this.cache.values()) total += v.data.length
+    while (this.cache.size > 1 && (this.cache.size > CACHE_FILES || total > CACHE_BYTES)) {
+      const oldest = this.cache.keys().next().value!
+      total -= this.cache.get(oldest)!.data.length
+      this.cache.delete(oldest)
+    }
     return { data: res.stdout, mime: mimeFor(path) }
   }
 
