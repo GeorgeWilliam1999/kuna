@@ -7,6 +7,7 @@ import { arrange, get, isUnread, set, toggleCollapsed, toggleFolder, useKuna } f
 import { OTHER_FOLDER_ID, agentCounts, assignAgents, buildTree, type TreeNode } from '../tree'
 import { StatusDot } from './StatusDot'
 import { TexText } from './TexText'
+import { keyLabel, localName } from '../platform'
 
 /** Roll-out arrow of a project or folder row, in the project's colour; turns down when open. */
 function Chevron({ open, color, small, hidden }: { open: boolean; color: string; small?: boolean; hidden?: boolean }): React.JSX.Element {
@@ -276,7 +277,7 @@ export function Sidebar(): React.JSX.Element {
           <div className="empty-side">
             <p>No projects yet.</p>
             <p>
-              Press <kbd>⌘N</kbd> to create one on this Mac or on any host from your SSH config.
+              Press <kbd>{keyLabel('⌘N')}</kbd> to create one on {localName} or on any host from your SSH config.
             </p>
           </div>
         )}

@@ -13,6 +13,7 @@ import type {
 } from '@shared/types'
 import { pruneArranged } from '@shared/arrange'
 import { REPO_COLORS } from './themes'
+import { keyLabel } from './platform'
 
 export type Zone = 'sidebar' | 'prompt' | 'pane'
 
@@ -214,7 +215,7 @@ export function syncHosts(): void {
 let toastSeq = 0
 export function toast(text: string, tone: Toast['tone'] = 'info'): void {
   const id = ++toastSeq
-  set((s) => ({ toasts: [...s.toasts.slice(-3), { id, text, tone }] }))
+  set((s) => ({ toasts: [...s.toasts.slice(-3), { id, text: keyLabel(text), tone }] }))
   setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), tone === 'info' ? 3500 : 7000)
 }
 

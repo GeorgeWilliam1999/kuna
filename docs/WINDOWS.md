@@ -1,0 +1,40 @@
+# Windows
+
+Kuna runs on Windows 10/11. The window, the sidebar and SSH hosts work as on a Mac; two things differ because Windows has neither tmux nor connection sharing in its `ssh`.
+
+## This PC is WSL
+
+tmux, which keeps agents alive when Kuna quits, does not exist on Windows. So on Windows the local host, **This PC (WSL)**, is your default [WSL](https://learn.microsoft.com/windows/wsl/) distribution: Kuna talks to it through `wsl.exe` exactly as it talks to an SSH host through `ssh`. The helper goes into `~/.kuna` inside WSL, agents run in WSL's tmux, and folders are WSL paths (`~/src/repo`, or `/mnt/c/Users/you/repo` for a folder on the Windows side, which is slower).
+
+Inside WSL you need what any host needs: `tmux`, Claude Code (signed in, run `claude` once in WSL) and a POSIX `sh`. In Ubuntu:
+
+```sh
+sudo apt install tmux
+# then install Claude Code inside WSL as its docs describe, and run `claude` once to sign in
+```
+
+WSL shuts a distribution down a little while after its last Windows-side program exits. While Kuna is open its watch stream keeps WSL up; after you quit Kuna, agents keep running only as long as WSL does. To keep them running, set an idle timeout in `%UserProfile%\.wslconfig` (see Microsoft's `.wslconfig` documentation, `instanceIdleTimeout` / `vmIdleTimeout`), or keep a WSL terminal open.
+
+## SSH hosts
+
+Kuna uses Windows' own OpenSSH (`ssh.exe`, an optional Windows feature that is on by default in Windows 10 1809+ and 11) and your `%UserProfile%\.ssh\config`. Windows' OpenSSH cannot share a connection between commands (`ControlMaster` needs Unix sockets), so:
+
+- every command and every open pane is a new ssh login, which is slower than on a Mac and noisier for busy login nodes;
+- hosts must let you in without a prompt: keys through `ssh-agent` (the *OpenSSH Authentication Agent* service) work; hosts that ask for a password or an OTP each time can't be used, since the **Sign in** button cannot open a shared connection for the commands that follow.
+
+## Keyboard
+
+Shortcuts written ⌘ in the docs are **Ctrl+Shift** on Windows, as in Windows Terminal, so that plain Ctrl keys always reach Claude Code (Ctrl+C, Ctrl+R, Ctrl+O…). ⇧⌘ becomes **Ctrl+Shift+Alt** (⇧⌘R, ⇧⌘← ⇧⌘→). ⌥ is Alt. **Ctrl+X Ctrl+X** is the same. In an agent, **Shift+drag** selects text (⌥ drag on a Mac), and Home and End do what ⌘← ⌘→ do. The help (**Ctrl+Shift+/**) and the status bar show the Windows keys.
+
+## Building from source
+
+You need Node.js 22.12+, Git, and the C++ build tools that `node-pty` compiles with: Visual Studio Build Tools with the *Desktop development with C++* workload, and Python 3.
+
+```powershell
+git clone https://github.com/jansam123/kuna.git; cd kuna
+npm install      # also builds node-pty for Electron
+npm run dev      # run it (F12 opens DevTools)
+npm run dist     # or build release\win-unpacked\Kuna.exe
+```
+
+`npm run typecheck` and the unit tests run on Windows; the tmux integration test is skipped there (it needs tmux and `sh`). `scripts/smoke.sh` is for macOS.

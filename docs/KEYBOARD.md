@@ -2,6 +2,8 @@
 
 ![Every shortcut, as ⌘/ shows them](images/doc-help.png)
 
+On Windows, ⌘ is Ctrl+Shift and ⇧⌘ is Ctrl+Shift+Alt; see [Windows](WINDOWS.md#keyboard).
+
 Kuna has two modes. The status bar's left corner always says which one you are in.
 
 - **navigate** — arrows move between the sidebar and the panes. Nothing you press reaches an agent.

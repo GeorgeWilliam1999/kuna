@@ -25,6 +25,7 @@ import {
   swapTabs,
   targetFolder
 } from './actions'
+import { cmdKey, isMac, printableMods } from './platform'
 import { get, removeFolder, removeProject, set, toast, toggleCollapsed, toggleFolder, updateSettings } from './store'
 import { copyTerminalSelection, pageAgent, reattach, screenLines, termFont, terminalEntry, writeToAgent } from './terminals'
 
@@ -32,7 +33,7 @@ const DOUBLE_ESC_MS = 500
 let lastEsc = 0
 
 export function isPrintable(ev: KeyboardEvent): boolean {
-  return ev.key.length === 1 && !ev.metaKey && !ev.ctrlKey && !ev.altKey
+  return ev.key.length === 1 && printableMods(ev)
 }
 
 function stop(ev: KeyboardEvent): void {
@@ -80,20 +81,25 @@ function escPressed(): boolean {
 
 function globalShortcut(ev: KeyboardEvent): boolean {
   const s = get()
-  const cmd = ev.metaKey && !ev.ctrlKey
-  const k = ev.key.toLowerCase()
+  const cmd = cmdKey(ev)
 
-  if (ev.ctrlKey && !ev.metaKey && k === 'x') {
+  if (ev.ctrlKey && !ev.metaKey && !cmd && ev.key.toLowerCase() === 'x') {
     killRequest()
     return true
   }
   if (!cmd) return false
+  const k = cmd.key.toLowerCase()
+  const shift = cmd.shift
 
-  if (k === 'c' && !ev.shiftKey && s.zone !== 'prompt') {
+  if (k === 'c' && !shift && s.zone !== 'prompt') {
     // the text selected in an agent (Option+drag), whatever has the focus; else the usual copy
-    return copyTerminalSelection(s.zone === 'pane' ? focusedKey() : undefined)
+    if (copyTerminalSelection(s.zone === 'pane' ? focusedKey() : undefined)) return true
+    if (isMac) return false
+    // Ctrl+Shift+C is no copy shortcut of the page's (and the terminal would take it as Ctrl+C)
+    document.execCommand('copy')
+    return true
   }
-  if (k === 'w' && !ev.shiftKey) {
+  if (k === 'w' && !shift) {
     const key = s.zone === 'pane' ? focusedKey() : activeAgentKey()
     if (key && s.tabs.includes(key)) closeTab(key)
     return true
@@ -104,7 +110,7 @@ function globalShortcut(ev: KeyboardEvent): boolean {
   }
   if (k === 'r') {
     // ⌘R renames; ⇧⌘R resumes an exited agent (respawns a background session)
-    if (ev.shiftKey) void resumeAgent()
+    if (shift) void resumeAgent()
     else renameSelection()
     return true
   }
@@ -115,7 +121,7 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     if (hidden && s.zone !== 'pane' && s.tabs.length) focusPane(s.paneIndex)
     return true
   }
-  if (k === 'z' && !ev.shiftKey && s.mode === 'nav' && s.zone !== 'prompt') {
+  if (k === 'z' && !shift && s.mode === 'nav' && s.zone !== 'prompt') {
     // bring back the session Ctrl+X Ctrl+X took off the list last
     restoreHidden()
     return true
@@ -124,7 +130,8 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     renameSelection()
     return true
   }
-  if (k === 'v' && !ev.shiftKey && s.zone !== 'prompt' && s.mode !== 'insert') {
+  // typing to an agent, a Mac's ⌘V pastes into its terminal by itself; Ctrl+Shift+V doesn't
+  if (k === 'v' && !shift && s.zone !== 'prompt' && (s.mode !== 'insert' || !isMac)) {
     pasteShortcut()
     return true
   }
@@ -141,11 +148,11 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     set({ overlay: { kind: 'claude', host }, mode: 'nav' })
     return true
   }
-  if (k === 'n' && !ev.shiftKey) {
+  if (k === 'n' && !shift) {
     set({ overlay: { kind: 'project' }, mode: 'nav' })
     return true
   }
-  if (k === 'o' || (k === 'n' && ev.shiftKey)) {
+  if (k === 'o' || (k === 'n' && shift)) {
     const node = selectedNode()
     const project = node?.project ?? s.projects[0]
     const suggest = node?.kind === 'agent' && node.folder.id === '__other' ? node.agent.cwd : undefined
@@ -157,25 +164,25 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     set({ overlay: { kind: 'settings' }, mode: 'nav' })
     return true
   }
-  if (k === '/' || ev.key === '?') {
+  if (k === '/' || k === '?') {
     set({ overlay: { kind: 'help' }, mode: 'nav' })
     return true
   }
-  if (/^[1-9]$/.test(ev.key)) {
-    const i = Number(ev.key) - 1
+  if (/^[1-9]$/.test(k)) {
+    const i = Number(k) - 1
     if (i < s.tabs.length) {
       if (s.mode === 'insert') leaveInsert(false)
       focusPane(i)
     }
     return true
   }
-  if ((k === '=' || k === '+' || k === '-') && !ev.shiftKey) {
+  if ((k === '=' || k === '+' || k === '-') && !shift) {
     const size = Math.max(8, Math.min(24, termFont().size + (k === '-' ? -1 : 1)))
     updateSettings({ termFontSize: size })
     return true
   }
-  if (ev.shiftKey && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && s.zone === 'pane') {
-    swapTabs(s.paneIndex, s.paneIndex + (ev.key === 'ArrowLeft' ? -1 : 1))
+  if (shift && (cmd.key === 'ArrowLeft' || cmd.key === 'ArrowRight') && s.zone === 'pane') {
+    swapTabs(s.paneIndex, s.paneIndex + (cmd.key === 'ArrowLeft' ? -1 : 1))
     return true
   }
   return false
@@ -250,7 +257,7 @@ function sidebarKey(ev: KeyboardEvent): void {
       return stop(ev)
     case 'Backspace':
     case 'Delete':
-      if (ev.metaKey && !draft && node?.kind === 'folder' && !node.virtual) {
+      if (cmdKey(ev) && !draft && node?.kind === 'folder' && !node.virtual) {
         set({
           overlay: {
             kind: 'confirm',
@@ -259,7 +266,7 @@ function sidebarKey(ev: KeyboardEvent): void {
             action: () => removeFolder(node.project.id, node.folder.id)
           }
         })
-      } else if (ev.metaKey && !draft && node?.kind === 'project') {
+      } else if (cmdKey(ev) && !draft && node?.kind === 'project') {
         set({
           overlay: {
             kind: 'confirm',
@@ -270,7 +277,7 @@ function sidebarKey(ev: KeyboardEvent): void {
         })
       } else if (draft) {
         // edit the launch box from here, like typing does
-        const cut = ev.metaKey ? draft.slice(0, draft.lastIndexOf('\n') + 1) : ev.altKey ? draft.replace(/\S*\s*$/, '') : draft.slice(0, -1)
+        const cut = cmdKey(ev) ? draft.slice(0, draft.lastIndexOf('\n') + 1) : ev.altKey ? draft.replace(/\S*\s*$/, '') : draft.slice(0, -1)
         set({ prompt: cut, zone: 'prompt', mode: 'insert' })
       }
       return stop(ev)

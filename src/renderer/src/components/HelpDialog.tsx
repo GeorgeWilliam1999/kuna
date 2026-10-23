@@ -1,4 +1,5 @@
 import { closeOverlay, useOverlayKeys } from './Overlays'
+import { cmdKey, isMac, keyLabel, localName } from '../platform'
 
 const SECTIONS: { title: string; keys: [string, string][] }[] = [
   {
@@ -46,7 +47,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['type, Enter', 'in the preview: write to the agent beside the file'],
       ['⌘P', 'in the preview: the file’s path, into your message'],
       ['PgUp PgDn', 'scroll the agent’s conversation a page, as the wheel does'],
-      ['⌘O · ⌘S', 'in the preview: open in Preview · save to Downloads'],
+      ['⌘O · ⌘S', `in the preview: open in ${isMac ? 'Preview' : 'its app'} · save to Downloads`],
       ['⌘U', 'in the preview: a Markdown file as source or rendered'],
       ['⌥ drag', 'select text in an agent; copied when you let go, ⌘C too'],
       ['⌘K', 'browse skills, agents, commands and CLAUDE.md'],
@@ -56,7 +57,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
   {
     title: 'Projects',
     keys: [
-      ['⌘N', 'new project (this Mac or an SSH host)'],
+      ['⌘N', `new project (${localName} or an SSH host)`],
       ['⌘O', 'add a folder to the selected project'],
       ['⌥↑ / ⌥↓', 'move a project, folder or agent up or down (⇧ too, or drag it)'],
       ['⌘⌫', 'remove the selected folder or project'],
@@ -67,7 +68,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
 
 export function HelpDialog(): React.JSX.Element {
   useOverlayKeys((ev) => {
-    if (ev.key === 'Enter' || ev.key === '?' || (ev.metaKey && ev.key === '/')) {
+    if (ev.key === 'Enter' || ev.key === '?' || cmdKey(ev)?.key === '/') {
       closeOverlay()
       return true
     }
@@ -85,7 +86,7 @@ export function HelpDialog(): React.JSX.Element {
                 {s.keys.map(([k, v], i) => (
                   <div key={i}>
                     <dt>
-                      <kbd>{k}</kbd>
+                      <kbd>{keyLabel(k)}</kbd>
                     </dt>
                     <dd>{v}</dd>
                   </div>
