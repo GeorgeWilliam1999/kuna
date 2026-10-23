@@ -17,7 +17,6 @@ import { TexText } from './TexText'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
-const MAX_PDF_PAGES = 60
 /** space around a fitted plot */
 const PAD = 28
 /** a small image is shown at most this much enlarged when fitted (zooming goes further) */
@@ -26,6 +25,8 @@ const MIN_ZOOM = 0.2
 const MAX_ZOOM = 16
 /** largest canvas side in device pixels; past it a page is stretched rather than re-rendered */
 const MAX_CANVAS = 8192
+/** PDF pages are drawn this far above and below the view (in heights of the view); further out they give their pixels back */
+const DRAW_AHEAD = '200%'
 /** the next file is fetched ahead, unless that would be a large download nobody asked for */
 const PREFETCH_MAX = 40 * 1024 * 1024
 /** a file this large says it is on its way while it comes */
@@ -59,68 +60,126 @@ interface Loaded {
 
 interface PdfDoc {
   doc: pdfjs.PDFDocumentProxy
-  /** page sizes in points */
+  /** page sizes in points, every page */
   sizes: { w: number; h: number }[]
-  total: number
 }
 
 const stampOf = (it: MediaItem): string => `${it.mtime}:${it.size}`
 const clampZoom = (z: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z))
 
 /**
- * PDF pages at `scale` CSS pixels per point. Pages are re-rendered for the
+ * All the pages of a PDF at `scale` CSS pixels per point. Only those in or
+ * near view (`root` scrolls them) are drawn, nearest the middle first, at the
  * screen's pixel ratio once the scale settles; until then the previous bitmap
- * is stretched, so zooming stays smooth.
+ * is stretched, so zooming stays smooth. Pages far out of view give their
+ * pixels back, so a long PDF costs no more memory than a short one.
  */
-function PdfPages({ pdf, scale }: { pdf: PdfDoc; scale: number }): React.JSX.Element {
+function PdfPages({ pdf, scale, root }: { pdf: PdfDoc; scale: number; root: HTMLElement | null }): React.JSX.Element {
   const host = useRef<HTMLDivElement>(null)
+  // the drawing loop's state: pages near the view, the scale each is drawn at
+  const live = useRef({ scale, near: new Set<number>(), drawn: new Map<number, number>(), busy: false, gone: false, task: null as pdfjs.RenderTask | null })
 
-  useEffect(() => {
+  /** Draw what is near the view and not drawn at the current scale yet, one page at a time. */
+  const draw = useCallback(async () => {
+    const st = live.current
     const el = host.current
-    if (!el) return
-    let cancelled = false
-    const tasks: pdfjs.RenderTask[] = []
-    const timer = setTimeout(async () => {
-      const dpr = window.devicePixelRatio || 1
-      const canvases = [...el.querySelectorAll('canvas')]
-      for (let i = 0; i < canvases.length && !cancelled; i++) {
-        const page = await pdf.doc.getPage(i + 1)
-        const { w, h } = pdf.sizes[i]
-        const vp = page.getViewport({ scale: Math.min(scale * dpr, MAX_CANVAS / Math.max(w, h)) })
+    if (st.busy || st.gone || !el || !root) return
+    st.busy = true
+    try {
+      const canvases = el.querySelectorAll('canvas')
+      for (;;) {
+        const s = st.scale
+        const view = root.getBoundingClientRect()
+        const middle = view.top + view.height / 2
+        let next = -1
+        let best = Infinity
+        for (const i of st.near) {
+          if (st.drawn.get(i) === s) continue
+          const r = canvases[i].getBoundingClientRect()
+          const d = Math.abs((r.top + r.bottom) / 2 - middle)
+          if (d < best) [best, next] = [d, i]
+        }
+        if (next < 0) return
+        const page = await pdf.doc.getPage(next + 1)
+        const { w, h } = pdf.sizes[next]
+        const vp = page.getViewport({ scale: Math.min(s * (window.devicePixelRatio || 1), MAX_CANVAS / Math.max(w, h)) })
         const off = document.createElement('canvas')
         off.width = Math.floor(vp.width)
         off.height = Math.floor(vp.height)
-        const task = page.render({ canvas: off, viewport: vp })
-        tasks.push(task)
+        st.task = page.render({ canvas: off, viewport: vp })
         try {
-          await task.promise
-        } catch {
-          return
+          await st.task.promise
+        } catch (e) {
+          if (st.gone) return
+          // a page that cannot be drawn is not tried again; a zoom only cancelled it
+          if ((e as Error)?.name !== 'RenderingCancelledException') st.drawn.set(next, s)
+          continue
+        } finally {
+          st.task = null
         }
-        if (cancelled) return
-        const c = canvases[i]
+        if (st.gone) return
+        if (!st.near.has(next)) continue // scrolled away meanwhile
+        const c = canvases[next]
         c.width = off.width
         c.height = off.height
         c.getContext('2d')?.drawImage(off, 0, 0)
+        st.drawn.set(next, s)
       }
-    }, 90)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-      for (const t of tasks) t.cancel()
+    } finally {
+      st.busy = false
     }
-  }, [pdf, scale])
+  }, [pdf, root])
+
+  // which pages are near the view; those far from it give their pixels back
+  useEffect(() => {
+    const el = host.current
+    if (!el || !root) return
+    const st = live.current
+    const canvases = el.querySelectorAll('canvas')
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          const i = Number((en.target as HTMLElement).dataset.page)
+          if (en.isIntersecting) st.near.add(i)
+          else {
+            st.near.delete(i)
+            if (st.drawn.delete(i)) canvases[i].width = canvases[i].height = 0
+          }
+        }
+        void draw()
+      },
+      { root, rootMargin: `${DRAW_AHEAD} 0px` }
+    )
+    canvases.forEach((c) => io.observe(c))
+    return () => io.disconnect()
+  }, [pdf, root, draw])
+
+  // a new scale is drawn once it settles
+  useEffect(() => {
+    const st = live.current
+    if (st.scale === scale) return
+    const t = setTimeout(() => {
+      st.scale = scale
+      st.task?.cancel()
+      void draw()
+    }, 90)
+    return () => clearTimeout(t)
+  }, [scale, draw])
+
+  useEffect(() => {
+    const st = live.current
+    return () => {
+      st.gone = true
+      st.task?.cancel()
+    }
+  }, [])
 
   return (
     <div className="pdf-pages" ref={host}>
       {pdf.sizes.map((s, i) => (
-        <canvas key={i} className="pdf-page" style={{ width: s.w * scale, height: s.h * scale }} />
+        // no pixels until it is drawn
+        <canvas key={i} data-page={i} className="pdf-page" width={0} height={0} style={{ width: s.w * scale, height: s.h * scale }} />
       ))}
-      {pdf.total > pdf.sizes.length && (
-        <p className="dim">
-          Showing the first {pdf.sizes.length} of {pdf.total} pages. Press O to open the full file.
-        </p>
-      )}
     </div>
   )
 }
@@ -329,12 +388,16 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
     const task = pdfjs.getDocument({ data: file.data.slice() })
     void task.promise
       .then(async (doc) => {
-        const sizes: PdfDoc['sizes'] = []
-        for (let i = 1; i <= Math.min(doc.numPages, MAX_PDF_PAGES); i++) {
-          const v = (await doc.getPage(i)).getViewport({ scale: 1 })
-          sizes.push({ w: v.width, h: v.height })
-        }
-        if (!cancelled) setPdf({ doc, sizes, total: doc.numPages })
+        // every page's size, so the whole document is laid out (and scrolls) from the start
+        const sizes = await Promise.all(
+          Array.from({ length: doc.numPages }, (_, i) =>
+            doc.getPage(i + 1).then((page) => {
+              const v = page.getViewport({ scale: 1 })
+              return { w: v.width, h: v.height }
+            })
+          )
+        )
+        if (!cancelled) setPdf({ doc, sizes })
         prefetch(items?.[index + 1])
       })
       .catch((e: unknown) => !cancelled && setFile((f) => (f ? { ...f, error: `Could not render this PDF: ${String(e)}` } : f)))
@@ -704,7 +767,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
         {busy && items && <span className="media-meta">{busy}</span>}
         {current && (
           <span className="media-meta">
-            {ago(current.mtime)} ago · {bytes(current.size)} ·{' '}
+            {ago(current.mtime)} ago · {bytes(current.size)} · {pdf && pdf.sizes.length > 1 ? `${pdf.sizes.length} pages · ` : ''}
             {md ? `${Math.round(zoom * 100)}%` : zoom === 1 ? 'fit' : `${zoom < 1 ? zoom.toFixed(2) : zoom.toFixed(1)}×`}
           </span>
         )}
@@ -790,7 +853,7 @@ export function MediaViewer({ agentKey }: { agentKey: string }): React.JSX.Eleme
                     }
                   />
                 )}
-                {pdf && <PdfPages pdf={pdf} scale={scale} />}
+                {pdf && <PdfPages pdf={pdf} scale={scale} root={stage.current} />}
                 {file?.html != null &&
                   (mdSource ? (
                     <article className="md media-md md-source" ref={mdRoot} style={{ zoom, maxWidth: stageSize.w - 2 * PAD }}>
