@@ -1343,6 +1343,8 @@ button.mini {
   padding: 8px 12px;
   color: var(--text);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  /* long paths in an error break instead of running off the window */
+  overflow-wrap: anywhere;
 }
 .toast-error {
   border-left-color: var(--danger);

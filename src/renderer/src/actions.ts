@@ -232,9 +232,19 @@ export async function spawnAgent(projectId: string, folderId: string, prompt: st
   const h = main?.clientHeight ?? 800
   const cols = Math.floor(w / rows[rows.length - 1] / 8.2)
   const lines = Math.floor(h / rows.length / 17) - 2
-  const res = await window.kuna.agents.spawn({ projectId, folderId, prompt, cols, rows: lines, resumeSessionId })
+  let res: Awaited<ReturnType<typeof window.kuna.agents.spawn>>
+  try {
+    res = await window.kuna.agents.spawn({ projectId, folderId, prompt, cols, rows: lines, resumeSessionId })
+  } catch (err) {
+    res = { error: String(err) }
+  }
   if ('error' in res) {
-    toast(res.error, 'error')
+    // the prompt did not start anything: it goes back into the launch box, ahead of what was typed since
+    if (prompt.trim()) {
+      const now = get().prompt
+      set({ prompt: now.trim() ? `${prompt}\n${now}` : prompt })
+    }
+    toast(prompt.trim() ? `${res.error.trim().replace(/[.:]?$/, '.')} Your prompt is back in the launch box.` : res.error, 'error')
     return
   }
   openTab(res.key, false)

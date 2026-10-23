@@ -9,7 +9,7 @@ Kuna has two modes. The status bar's left corner always says which one you are i
 
 You enter typing mode by starting to type on a pane (or pressing Enter on it). You leave it by sending (**Enter**) or abandoning (**Esc Esc**).
 
-Launching works the same way from the sidebar: start typing with a folder selected and the text goes into the launch box under the sidebar; **Enter** starts a new agent with it. While the box has text, **← →** move through it and **↑ ↓** between its lines (⌥ and ⌘ arrows jump by word and line, ⇧ arrows select); **↑ ↓** past the first or last line pick the folder: the text stays in the box and the agent starts in the folder that is selected when you press Enter. Backspace edits the box from the sidebar too.
+Launching works the same way from the sidebar: start typing with a folder selected and the text goes into the launch box under the sidebar; **Enter** starts a new agent with it; if it can't start (the host is unreachable, `claude` fails), the text goes back into the box. While the box has text, **← →** move through it and **↑ ↓** between its lines (⌥ and ⌘ arrows jump by word and line, ⇧ arrows select); **↑ ↓** past the first or last line pick the folder: the text stays in the box and the agent starts in the folder that is selected when you press Enter. Backspace edits the box from the sidebar too.
 
 ## Moving around
 
