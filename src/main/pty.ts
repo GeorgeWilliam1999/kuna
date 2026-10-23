@@ -4,6 +4,8 @@ import * as pty from 'node-pty'
 
 interface Session {
   proc: pty.IPty
+  /** the window that opened it: its output goes there only */
+  owner: WebContents
   buf: string
   timer?: NodeJS.Timeout
 }
@@ -18,9 +20,7 @@ const FLUSH_MS = 6
 export class PtyService {
   private sessions = new Map<string, Session>()
 
-  constructor(private target: () => WebContents | undefined) {}
-
-  open(file: string, args: string[], cols: number, rows: number, onExit?: () => void): string {
+  open(owner: WebContents, file: string, args: string[], cols: number, rows: number, onExit?: () => void): string {
     const id = randomBytes(6).toString('hex')
     const env = { ...process.env } as Record<string, string>
     env.TERM = 'xterm-256color'
@@ -33,8 +33,11 @@ export class PtyService {
       cwd: process.env.HOME,
       env
     })
-    const s: Session = { proc, buf: '' }
+    const s: Session = { proc, owner, buf: '' }
     this.sessions.set(id, s)
+    const send = (channel: string, ...args: unknown[]): void => {
+      if (!owner.isDestroyed()) owner.send(channel, ...args)
+    }
 
     // Coalesce bursts of output into one IPC message per few ms.
     proc.onData((d) => {
@@ -44,7 +47,7 @@ export class PtyService {
           s.timer = undefined
           const out = s.buf
           s.buf = ''
-          this.target()?.send('pty:data', id, out)
+          send('pty:data', id, out)
         }, FLUSH_MS)
       }
     })
@@ -52,10 +55,10 @@ export class PtyService {
       onExit?.()
       if (s.timer) {
         clearTimeout(s.timer)
-        if (s.buf) this.target()?.send('pty:data', id, s.buf)
+        if (s.buf) send('pty:data', id, s.buf)
       }
       this.sessions.delete(id)
-      this.target()?.send('pty:exit', id, exitCode)
+      send('pty:exit', id, exitCode)
     })
     return id
   }
@@ -83,6 +86,11 @@ export class PtyService {
     } catch {
       /* already exited */
     }
+  }
+
+  /** A window closed: its terminals go with it. */
+  closeOwnedBy(owner: WebContents): void {
+    for (const [id, s] of [...this.sessions]) if (s.owner === owner) this.close(id)
   }
 
   dispose(): void {

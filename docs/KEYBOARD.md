@@ -25,6 +25,19 @@ Launching works the same way from the sidebar: start typing with a folder select
 | ⌘S | anywhere | hide or show the left sidebar (and launch box) |
 | ⌘B | anywhere | hide or show the right inspector (⌘I works too) |
 
+## Windows
+
+Each window has its own panes; the sidebar is the same in all of them. An agent has one pane across all windows: Enter on an agent that is open in another window goes to that window and its pane.
+
+| Keys | Where | Does |
+| --- | --- | --- |
+| ⇧⌘N | anywhere | new window, with no panes and the same row selected (also Window → New Window) |
+| ⌘← / ⌘→ | navigate | the previous / next window, where you left it, in navigate. Windows go left to right on screen (then top to bottom, then the order they were opened) and the order wraps around. While typing, and in the launch box with text in it, ⌘← ⌘→ stay start / end of the line |
+| ⌥⌘← / ⌥⌘→ | panes | carry the focused pane to the previous / next window; the focus goes with it |
+| ⇧⌘W | anywhere | close the window: its panes close, the agents keep running. Closing the last one quits Kuna |
+
+The status bar shows which window you are in ("2/3") when there are several, and a window's title (in the Window menu and Mission Control) is the agent of its focused pane. The windows open at quit come back at the next launch, in their places, with their panes; one you closed before quitting does not. A notification goes to the window that has the agent's pane, or opens it in the window you used last.
+
 ## Agents
 
 | Keys | Where | Does |
@@ -51,7 +64,7 @@ Launching works the same way from the sidebar: start typing with a folder select
 | ⇧⌘R | Kuna agent that exited | resume its conversation (`claude --resume`) in a fresh agent |
 | ⇧⌘R | Claude background session | `claude respawn` (restart on the current Claude version); on a stopped one, reopen it |
 | ⌘W | pane | close the pane; the agent keeps running. Focus goes back to where you opened it from (the sidebar row or the pane) if you went nowhere else in between |
-| Ctrl+X Ctrl+X | pane or sidebar agent | Kuna agent: kill it. Background session: `claude stop` and off the list, no question; the conversation is kept, nothing is deleted |
+| Ctrl+X Ctrl+X | pane or sidebar agent | Kuna agent: kill it. Background session: `claude stop` and off the list, no question; the conversation is kept, nothing is deleted. Its pane closes in whichever window has it |
 | ⌘Z | navigate | bring back the session Ctrl+X Ctrl+X took off the list last (stopped: Enter opens it). One brought back from `claude agents` shows up again by itself |
 
 A single **Esc** goes to the agent, on a pane or while typing, as in a terminal: it closes Claude Code's menus and panels (`/config`, `/usage`, the slash-command list) and answers "no" to a permission prompt. While the agent is working Kuna keeps it, since in Claude Code it would interrupt the turn (use **⌘.** when you do want to interrupt), unless a panel or question is on its screen, which takes the Esc instead. In tmux scroll mode Esc leaves scroll mode. A second Esc right after the first leaves typing mode; while a panel is open every Esc goes to it (`/config` takes two: one clears its search, the next closes it).
@@ -114,7 +127,7 @@ Click selects; a click on a project or folder rolls it out or in, its ⋯ button
 | hollow grey dot | exited or stopped. Enter brings a stopped background session back; ⇧⌘R resumes a Kuna agent's conversation |
 | bright name | an agent that is running. Folder names, and agents that exited or were stopped, are dimmer |
 | diamond, bold name | finished or asked something since you last looked |
-| small square | open in a pane |
+| small square | open in a pane: filled in this window, hollow in another window |
 | amber or red gauge | its context is getting long (half the window, or 300k tokens) or almost full (80%; Claude Code will compact it soon) |
 
 A pane's header shows the folder, the agent's name, how many PDFs and images Space would show, its context, model and status in a word ("running", "editing", "2 jobs"). What it is doing in full is in the status's tooltip and in the inspector.
