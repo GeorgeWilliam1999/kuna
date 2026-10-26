@@ -12,6 +12,7 @@ import type {
   SshHostEntry
 } from '@shared/types'
 import { pruneArranged } from '@shared/arrange'
+import { wslPath } from '@shared/paths'
 import { REPO_COLORS } from './themes'
 import { keyLabel } from './platform'
 
@@ -189,7 +190,7 @@ export async function loadState(): Promise<void> {
     // "a//b/" as typed is "a/b"
     projects: state.projects.map((p) => ({
       ...p,
-      folders: p.folders.map((f) => ({ ...f, path: f.path.replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1') }))
+      folders: p.folders.map((f) => ({ ...f, path: wslPath(f.path).replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1') }))
     })),
     settings: state.settings,
     lastSeen: state.lastSeen,
@@ -347,7 +348,7 @@ export function pruneArrangement(): void {
 export function addFolder(projectId: string, path: string, name?: string): Folder {
   const all = get().projects.flatMap((p) => p.folders.map((f) => f.color))
   const color = REPO_COLORS.find((c) => !all.includes(c)) ?? REPO_COLORS[all.length % REPO_COLORS.length]
-  const clean = path.trim().replace(/\/{2,}/g, '/').replace(/\/+$/, '') || '/'
+  const clean = wslPath(path.trim()).replace(/\/{2,}/g, '/').replace(/\/+$/, '') || '/'
   const folder: Folder = { id: uid(), path: clean, name: name?.trim() || (clean === '~' ? 'home' : clean.split('/').pop() || clean), color }
   set((s) => ({
     projects: s.projects.map((p) => (p.id === projectId ? { ...p, collapsed: false, folders: [...p.folders, folder] } : p)),

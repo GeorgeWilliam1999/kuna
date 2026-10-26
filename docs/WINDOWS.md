@@ -4,7 +4,7 @@ Kuna runs on Windows 10/11. The window, the sidebar and SSH hosts work as on a M
 
 ## This PC is WSL
 
-tmux, which keeps agents alive when Kuna quits, does not exist on Windows. So on Windows the local host, **This PC (WSL)**, is your default [WSL](https://learn.microsoft.com/windows/wsl/) distribution: Kuna talks to it through `wsl.exe` exactly as it talks to an SSH host through `ssh`. The helper goes into `~/.kuna` inside WSL, agents run in WSL's tmux, and folders are WSL paths (`~/src/repo`, or `/mnt/c/Users/you/repo` for a folder on the Windows side, which is slower).
+tmux, which keeps agents alive when Kuna quits, does not exist on Windows. So on Windows the local host, **This PC (WSL)**, is your default [WSL](https://learn.microsoft.com/windows/wsl/) distribution: Kuna talks to it through `wsl.exe` exactly as it talks to an SSH host through `ssh`. The helper goes into `~/.kuna` inside WSL, agents run in WSL's tmux, and folders are WSL paths (`~/src/repo`, or `/mnt/c/Users/you/repo` for a folder on the Windows side, which is slower). A Windows path typed or pasted into the folder dialog (`C:\Users\you\repo`) is turned into its `/mnt/c/…` form.
 
 Inside WSL you need what any host needs: `tmux`, Claude Code (signed in, run `claude` once in WSL) and a POSIX `sh`. In Ubuntu:
 
@@ -33,6 +33,8 @@ You need Node.js 22.12+, Git, Python 3, and the C++ build tools that `node-pty` 
 ```powershell
 winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre --includeRecommended"
 ```
+
+If `npm run dev` then fails with `Electron uninstall`, Electron's download was skipped: run `node node_modules/electron/install.js` once.
 
 If `npm install` says `'GetCommitHash.bat' is not recognized`, your shell sets `NoDefaultCurrentDirectoryInExePath`; run it from a terminal without that variable.
 

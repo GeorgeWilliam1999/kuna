@@ -3,7 +3,7 @@ import { describeActivity, shortActivity } from '@shared/activity'
 import { baseModelId, contextInfo, contextLevel, contextWindowSize, modelFlag } from '@shared/context'
 import { compactBlocker, hasInputBox, screenState } from '@shared/input'
 import { parseJsonc } from '@shared/jsonc'
-import { cleanTypedPath, pastePath } from '@shared/paths'
+import { cleanTypedPath, pastePath, wslPath } from '@shared/paths'
 import { gridRows, neighbor } from '@shared/layout'
 import { extractMediaPaths, mediaKind, normalizePosix, resolveAgainst, viewerOrder } from '@shared/media'
 import { cmdKeyOf, keyLabelFor, typesCharacter } from '@shared/shortcuts'
@@ -200,6 +200,15 @@ describe('paths typed or pasted in the folder dialog', () => {
     expect(pastePath('/x/', 'file:///Users/me/plots', 3, 3).value).toBe('/Users/me/plots')
     // a relative piece is inserted where the caret is
     expect(pastePath('/project/', 'exp/users', 9, 9)).toEqual({ value: '/project/exp/users', caret: 18 })
+  })
+  it('turns Windows paths into the ones WSL sees', () => {
+    expect(wslPath('C:\\Users\\George Scriven\\Documents\\GitHub')).toBe('/mnt/c/Users/George Scriven/Documents/GitHub')
+    expect(wslPath('d:/data')).toBe('/mnt/d/data')
+    expect(wslPath('C:')).toBe('/mnt/c/')
+    expect(wslPath('~/work')).toBe('~/work')
+    expect(cleanTypedPath('C:\\Users\\me\\')).toBe('/mnt/c/Users/me/')
+    expect(pastePath('~/', '"C:\\Users\\me\\repo"', 2, 2).value).toBe('/mnt/c/Users/me/repo')
+    expect(pastePath('~/', 'file:///C:/Users/me/repo', 2, 2).value).toBe('/mnt/c/Users/me/repo')
   })
 })
 
