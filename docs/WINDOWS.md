@@ -28,7 +28,13 @@ Shortcuts written ⌘ in the docs are **Ctrl+Shift** on Windows, as in Windows T
 
 ## Building from source
 
-You need Node.js 22.12+, Git, and the C++ build tools that `node-pty` compiles with: Visual Studio Build Tools with the *Desktop development with C++* workload, and Python 3.
+You need Node.js 22.12+, Git, Python 3, and the C++ build tools that `node-pty` compiles with: Visual Studio Build Tools with the *Desktop development with C++* workload **and** the *MSVC v143 – VS 2022 C++ x64/x86 Spectre-mitigated libs* component (without it the build stops with `MSB8040: Spectre-mitigated libraries are required`). From an admin PowerShell:
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre --includeRecommended"
+```
+
+If `npm install` says `'GetCommitHash.bat' is not recognized`, your shell sets `NoDefaultCurrentDirectoryInExePath`; run it from a terminal without that variable.
 
 ```powershell
 git clone https://github.com/jansam123/kuna.git; cd kuna
@@ -37,4 +43,4 @@ npm run dev      # run it (F12 opens DevTools)
 npm run dist     # or build release\win-unpacked\Kuna.exe
 ```
 
-`npm run typecheck` and the unit tests run on Windows; the tmux integration test is skipped there (it needs tmux and `sh`). `scripts/smoke.sh` is for macOS.
+`npm run typecheck` and the unit tests run on Windows; the tests that run `kuna.sh` itself (and the tmux integration test) are skipped there, since they need `sh`. `scripts/smoke.sh` is for macOS.
