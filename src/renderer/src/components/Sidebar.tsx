@@ -20,7 +20,7 @@ function Chevron({ open, color, small, hidden }: { open: boolean; color: string;
 
 function HostBadge({ host, state }: { host: string; state?: HostState }): React.JSX.Element {
   const status = state?.status ?? 'idle'
-  const label = host === LOCAL_HOST ? 'this mac' : host
+  const label = host === LOCAL_HOST ? localName.toLowerCase() : host
   const title =
     status === 'ready'
       ? `${state?.hostname ?? host} · ${state?.tmuxVersion ?? 'tmux'}`

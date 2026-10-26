@@ -192,8 +192,11 @@ export async function loadState(): Promise<void> {
       ...p,
       folders: p.folders.map((f) => {
         const path = wslPath(f.path).replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1')
+        // a name taken from the Windows path it was added with becomes the folder's own
+        const name = f.name !== path && wslPath(f.name).replace(/\/+$/, '') === path ? path.split('/').pop() || path : f.name
+        if (wslPath(f.path) === f.path) return { ...f, path, name }
         // a Windows path that became WSL's is asked about again (its old lookup failed)
-        return path !== f.path && wslPath(f.path) !== f.path ? { ...f, path, real: undefined } : { ...f, path }
+        return { ...f, path, name, real: undefined }
       })
     })),
     settings: state.settings,
