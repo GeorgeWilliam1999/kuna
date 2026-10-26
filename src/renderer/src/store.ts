@@ -190,7 +190,11 @@ export async function loadState(): Promise<void> {
     // "a//b/" as typed is "a/b"
     projects: state.projects.map((p) => ({
       ...p,
-      folders: p.folders.map((f) => ({ ...f, path: wslPath(f.path).replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1') }))
+      folders: p.folders.map((f) => {
+        const path = wslPath(f.path).replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1')
+        // a Windows path that became WSL's is asked about again (its old lookup failed)
+        return path !== f.path && wslPath(f.path) !== f.path ? { ...f, path, real: undefined } : { ...f, path }
+      })
     })),
     settings: state.settings,
     lastSeen: state.lastSeen,
