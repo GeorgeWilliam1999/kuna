@@ -6,12 +6,31 @@ Kuna runs on Windows 10/11. The window, the sidebar and SSH hosts work as on a M
 
 tmux, which keeps agents alive when Kuna quits, does not exist on Windows. So on Windows the local host, **This PC (WSL)**, is your default [WSL](https://learn.microsoft.com/windows/wsl/) distribution: Kuna talks to it through `wsl.exe` exactly as it talks to an SSH host through `ssh`. The helper goes into `~/.kuna` inside WSL, agents run in WSL's tmux, and folders are WSL paths (`~/src/repo`, or `/mnt/c/Users/you/repo` for a folder on the Windows side, which is slower). A Windows path typed or pasted into the folder dialog (`C:\Users\you\repo`) is turned into its `/mnt/c/…` form.
 
-Inside WSL you need what any host needs: `tmux`, Claude Code (signed in, run `claude` once in WSL) and a POSIX `sh`. In Ubuntu:
+### Setting up WSL
+
+From an administrator PowerShell, `wsl --install -d Ubuntu`, then pick a Linux user name and password when Ubuntu starts. If WSL answers `Wsl/CallMsi/Install/REGDB_E_CLASSNOTREG`, its install is incomplete: `winget install --id Microsoft.WSL --source winget`, reboot, and try again.
+
+Inside WSL you need what any host needs: `tmux`, Claude Code (signed in) and a POSIX `sh`. In Ubuntu:
 
 ```sh
-sudo apt install tmux
-# then install Claude Code inside WSL as its docs describe, and run `claude` once to sign in
+sudo apt install -y tmux
+curl -fsSL https://claude.ai/install.sh | bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc   # Kuna finds claude through your login shell
+exec bash -l
+claude    # sign in once, then /exit
 ```
+
+This is a separate Claude Code from the Windows one, with its own sign-in and settings; Kuna's agents use the one in WSL.
+
+### Trusting a folder
+
+Claude Code asks once per folder whether you trust it. A background session (Kuna's default launch) can't ask, and fails with *Workspace not trusted*. Trust the folder from Ubuntu first:
+
+```sh
+cd "/mnt/c/Users/you/Documents/GitHub" && claude    # answer Yes, then /exit
+```
+
+Type the path with the same capitals as the folder in Kuna: Windows doesn't care, but Claude Code remembers `…/github` and `…/GitHub` as two different folders. Projects that launch agents in tmux instead show the trust question in Kuna's own pane.
 
 WSL shuts a distribution down a little while after its last Windows-side program exits. While Kuna is open its watch stream keeps WSL up; after you quit Kuna, agents keep running only as long as WSL does. To keep them running, set an idle timeout in `%UserProfile%\.wslconfig` (see Microsoft's `.wslconfig` documentation, `instanceIdleTimeout` / `vmIdleTimeout`), or keep a WSL terminal open.
 
