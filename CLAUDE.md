@@ -20,7 +20,7 @@ The goal: the user ends up with Kuna running and knows how to start their first 
 
 3. **Verify.**
    - `npm run typecheck` and `npm test` must pass. The integration test uses its own tmux server (`KUNA_TMUX_SOCKET`) and a temporary `HOME`, so it never touches the user's agents.
-   - `sh scripts/smoke.sh` builds, opens Kuna once with a throwaway profile, and closes it. It should print `window: ok` and `this Mac: ok`, plus the path of a screenshot you can look at. It starts no agents and leaves the user's own Kuna state alone.
+   - `sh scripts/smoke.sh` builds, opens Kuna once with a throwaway profile, and closes it. It should print `window: ok`, `this Mac: ok` and `windows: ok`, plus the path of a screenshot you can look at. It starts no agents and leaves the user's own Kuna state alone.
 
 4. **Run it.** Either `npm run dev` (development build with hot reload; Ctrl+C quits), or build the app with `npm run dist` → `release/mac-arm64/Kuna.app` (`release/mac/Kuna.app` on Intel). The app is unsigned; built on this Mac it opens normally. Ask before copying it to `/Applications`. If the user has a `Kuna.app` from somewhere else, build it from source instead of removing macOS's quarantine from that copy.
 
@@ -31,7 +31,7 @@ The goal: the user ends up with Kuna running and knows how to start their first 
 **Remote hosts.** Any `Host` alias in `~/.ssh/config` works; Kuna uses the user's own `ssh`. A host needs `tmux`, `claude` and a POSIX `sh`. Kuna runs ssh with `BatchMode=yes`; hosts that need a password or OTP get a **Sign in** button. See `docs/REMOTE-HOSTS.md` for clusters, Kerberos and troubleshooting.
 
 **What Kuna writes.**
-- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, settings, layout; a `.bak` next to it).
+- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, settings, each window's panes and place; a `.bak` next to it).
 - On every host it uses, this Mac included: `~/.kuna/` (helper script, tmux config, hook settings, one directory per agent, ssh control sockets on the Mac).
 - A private tmux server, `tmux -L kuna`, separate from the user's own tmux.
 - It never edits `~/.claude/settings.json`; its hooks are passed with `claude --settings`.

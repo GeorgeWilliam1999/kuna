@@ -100,9 +100,17 @@ Files are fetched with `kuna cat` over the shared ssh connection and cached by p
 
 Agents report their working directory with symlinks resolved (`getcwd`), while a folder may have been added through a symlink (`/project/exp/users/…` for `/project/exp/Users/…`) or with a stray `//`. Kuna cleans the path and asks the host once per folder for its physical path (`kuna realpath`, `cd … && pwd -P`), stores it as `real`, and places agents by either path.
 
+## Windows
+
+Every window is its own BrowserWindow with its own renderer: its own panes, terminals, focus and mode ([ADR 0001](adr/0001-one-renderer-per-window.md)). What they share (projects and folders, settings, names, unread markers, hidden sessions) belongs to the main process, the only writer of `kuna-state.json`. A window sends what it changed as a patch (`@shared/sync`: records key by key, the projects whole), the main process saves it and passes it to the other windows, so two windows changing different things at once both keep their change. Host connections, the watch stream and transcripts are the main process's, once for all windows; each window's agents in view add up to what is followed.
+
+`src/main/windows.ts` keeps the windows: the order ⌘← ⌘→ walk (`@shared/windows`: by the left edge, then the top, then when opened, wrapping), which window has which agent's pane, and what comes back at the next launch: every window open at quit, or the last one closed, with its place on screen and its panes. Each pty's output goes only to the window that opened it.
+
+An agent has at most one pane across all windows. A pane is a `tmux attach`, and tmux sizes a session for one of its clients, so a second window of another size would show it cropped or padded. Opening an agent that has a pane elsewhere goes to that window instead; ⌥⌘← ⌥⌘→ carry a pane over. Every window sees each status change; only the one used last posts the notification, and only when no Kuna window has the focus.
+
 ## Renderer
 
-- `store.ts` — zustand store: persisted projects/settings/lastSeen and the layout (open panes in order, the focused one, sidebar hidden or not) plus live agents, details, hosts and UI focus. At start the saved panes reopen as their agents show up running; gone or stopped ones stay closed (attaching would restart a stopped background session).
+- `store.ts` — zustand store: projects/settings/lastSeen shared with the other windows and this window's layout (open panes in order, the focused one, sidebar hidden or not) plus live agents, details, hosts and UI focus. At start the saved panes reopen as their agents show up running; gone or stopped ones stay closed (attaching would restart a stopped background session).
 - `keys.ts` + `actions.ts` — the navigate/typing state machine. A single capture-phase key listener decides whether a key is an app command or belongs to the terminal.
 - `terminals.ts` — xterm instances kept outside React and re-parented into pane slots (and into the plot viewer's agent column), so re-layouts never drop a terminal or its connection.
 - `tree.ts` — places agents under folders: where the user put them by hand (a folder's `agents` list, from dragging or ⇧↑ ⇧↓; `@shared/arrange`), then by the folder they were launched from, then by working directory, then "Other agents". Background sessions stopped with Ctrl+X Ctrl+X are kept in `hidden` and left out until ⌘Z or until they run again.

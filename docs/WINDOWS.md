@@ -43,7 +43,7 @@ Kuna uses Windows' own OpenSSH (`ssh.exe`, an optional Windows feature that is o
 
 ## Keyboard
 
-Shortcuts written ⌘ in the docs are **Ctrl+Shift** on Windows, as in Windows Terminal, so that plain Ctrl keys always reach Claude Code (Ctrl+C, Ctrl+R, Ctrl+O…). ⇧⌘ becomes **Ctrl+Shift+Alt** (⇧⌘R, ⇧⌘← ⇧⌘→). ⌥ is Alt. **Ctrl+X Ctrl+X** is the same. In an agent, **Shift+drag** selects text (⌥ drag on a Mac), and Home and End do what ⌘← ⌘→ do. The help (**Ctrl+Shift+/**) and the status bar show the Windows keys.
+Shortcuts written ⌘ in the docs are **Ctrl+Shift** on Windows, as in Windows Terminal, so that plain Ctrl keys always reach Claude Code (Ctrl+C, Ctrl+R, Ctrl+O…). ⇧⌘ becomes **Ctrl+Shift+Alt** (⇧⌘R, ⇧⌘N and ⇧⌘W for a new window and closing it, ⇧⌘← ⇧⌘→). ⌥ is Alt. Between windows, ⌘← ⌘→ are **Ctrl+Shift+← →** and ⌥⌘← ⌥⌘→ (carry the pane) are **Ctrl+Alt+← →**. **Ctrl+X Ctrl+X** is the same. In an agent, **Shift+drag** selects text (⌥ drag on a Mac), and Home and End do what ⌘← ⌘→ do. The help (**Ctrl+Shift+/**) and the status bar show the Windows keys.
 
 ## Building from source
 

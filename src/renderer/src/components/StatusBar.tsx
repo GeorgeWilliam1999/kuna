@@ -76,6 +76,7 @@ export function StatusBar(): React.JSX.Element {
   const agents = useKuna((s) => s.agents)
   const escHint = useKuna((s) => s.escHint)
   const usage = useKuna((s) => s.usage)
+  const windows = useKuna((s) => s.windows)
 
   const list = Object.values(agents)
   const working = list.filter((a) => a.status === 'working').length
@@ -92,6 +93,11 @@ export function StatusBar(): React.JSX.Element {
   return (
     <footer className="statusbar">
       <span className={`sb-mode sb-${modeName}`}>{modeName}</span>
+      {windows.count > 1 && (
+        <span className="sb-window" title={keyLabel(`Window ${windows.index + 1} of ${windows.count}: ⌘← ⌘→ go to the others`)}>
+          {windows.index + 1}/{windows.count}
+        </span>
+      )}
       <span className="sb-hint">{keyLabel(hint)}</span>
       <span className="sb-spacer" />
       {waiting > 0 && <span className="sb-count st-waiting">{waiting} need you</span>}

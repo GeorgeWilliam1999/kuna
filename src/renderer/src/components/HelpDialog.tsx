@@ -12,7 +12,10 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['⌥ arrows', 'move the pane that way, swapping it with the one there'],
       ['⇧⌘← / ⇧⌘→', 'move the tab left / right'],
       ['⌘S', 'hide or show the left sidebar (← from the first pane peeks)'],
-      ['⌘B', 'hide or show the right inspector (→ from the last pane peeks)']
+      ['⌘B', 'hide or show the right inspector (→ from the last pane peeks)'],
+      ['⇧⌘N · ⇧⌘W', 'new window · close it (its agents keep running)'],
+      ['⌘← / ⌘→', 'the previous / next window'],
+      ['⌥⌘← / ⌥⌘→', 'carry the pane to the previous / next window']
     ]
   },
   {
@@ -26,7 +29,7 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['⇧Enter', 'new line in the message'],
       ['Esc', "for the agent: closes Claude Code's menus, /usage (not while it works)"],
       ['Esc Esc', 'stop typing and clear what you typed'],
-      ['⌘← ⌘→', 'while typing: start / end of the line'],
+      [isMac ? '⌘← ⌘→' : 'Home End', 'while typing: start / end of the line'],
       ['1 … 9', 'answer a permission prompt'],
       ['⇧Tab', "cycle the agent's permission mode"],
       ['⌘V', 'paste: into the launch box (sidebar) or the agent (pane)'],

@@ -84,7 +84,7 @@ function Row({
   const lastSeen = useKuna((s) => s.lastSeen)
   const details = useKuna((s) => (node.kind === 'agent' ? s.details[node.agent.key] : undefined))
   const armed = useKuna((s) => node.kind === 'agent' && s.armedKill?.key === node.agent.key)
-  const open = useKuna((s) => node.kind === 'agent' && s.tabs.includes(node.agent.key))
+  const open = useKuna((s) => (node.kind !== 'agent' ? null : s.tabs.includes(node.agent.key) ? 'here' : s.windows.elsewhere[node.agent.key] ? 'elsewhere' : null))
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -175,7 +175,7 @@ function Row({
         <span className={`agent-name ${unread ? 'unread' : ''}`}>
           {armed ? (a.kind === 'claude' && a.alive ? 'Ctrl+X again to stop' : 'Ctrl+X again to remove') : agentTitle(a, details)}
         </span>
-        {open && <span className="open-mark" title="Open in a tab" />}
+        {open && <span className={`open-mark ${open}`} title={open === 'here' ? 'Open in a pane' : 'Open in another window'} />}
         {unread && <span className="unread-mark" title="New output you haven't seen" />}
         {a.status !== 'exited' && a.status !== 'failed' && ctx.level !== 'ok' && (
           <span

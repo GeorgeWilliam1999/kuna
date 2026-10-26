@@ -498,6 +498,10 @@ button.mini {
   border: 1px solid var(--dim);
   flex: none;
 }
+/* filled: a pane in this window; hollow: in another window */
+.open-mark.here {
+  background: var(--dim);
+}
 
 .empty-side {
   padding: 14px 16px;
@@ -1254,6 +1258,11 @@ button.mini {
 .sb-hint {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* "2/3": which window this is, when there are several */
+.sb-window {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 .sb-count.st-waiting {
   color: var(--waiting);

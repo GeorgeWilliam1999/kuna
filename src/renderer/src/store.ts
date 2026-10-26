@@ -5,14 +5,17 @@ import type {
   Folder,
   FontPrefs,
   HostState,
-  PersistedState,
   PlanUsage,
   Project,
   Settings,
-  SshHostEntry
+  SharedState,
+  SshHostEntry,
+  WindowLayout,
+  WindowsInfo
 } from '@shared/types'
 import { pruneArranged } from '@shared/arrange'
 import { wslPath } from '@shared/paths'
+import { applyPatch, diffShared, mergePatch, type SharedPatch } from '@shared/sync'
 import { REPO_COLORS } from './themes'
 import { keyLabel } from './platform'
 
@@ -74,6 +77,8 @@ interface KunaState {
   hidden: Record<string, number>
   /** agent key → the name given to it in Kuna (⌘R) */
   names: Record<string, string>
+  /** the other Kuna windows, as far as this one needs to know */
+  windows: WindowsInfo
 }
 
 export const useKuna = create<KunaState>(() => ({
@@ -103,7 +108,8 @@ export const useKuna = create<KunaState>(() => ({
   sidebarHidden: false,
   sidebarPeek: false,
   inspectorPeek: false,
-  escHint: false
+  escHint: false,
+  windows: { index: 0, count: 1, anyFocused: true, notifier: true, elsewhere: {} }
 }))
 
 export const get = useKuna.getState
@@ -115,20 +121,31 @@ const uid = (): string => Math.random().toString(36).slice(2, 10)
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 
-function snapshot(): PersistedState {
+/** This window's panes, as saved. */
+function layout(): WindowLayout {
   const s = get()
   // panes still waiting to be reopened count as open
   const tabs = [...s.tabs, ...(pendingTabs?.keys.filter((k) => !s.tabs.includes(k)) ?? [])]
   const focus = s.zone === 'pane' ? s.tabs[s.paneIndex] : pendingTabs?.focus
-  return {
-    version: 1,
-    projects: s.projects,
-    settings: s.settings,
-    lastSeen: s.lastSeen,
-    hostnames: s.hostnames,
-    hidden: s.hidden,
-    names: s.names,
-    layout: { tabs, focus, sidebarHidden: s.sidebarHidden }
+  return { tabs, focus, sidebarHidden: s.sidebarHidden }
+}
+
+function shared(s: KunaState): SharedState {
+  return { projects: s.projects, settings: s.settings, lastSeen: s.lastSeen, hostnames: s.hostnames, hidden: s.hidden, names: s.names }
+}
+
+/** changes to the shared state made here since the last save */
+let pending: SharedPatch | null = null
+/** applying another window's change: not one of ours to send */
+let fromElsewhere = false
+
+/** Another window changed the shared state (projects, settings, names…). */
+export function applyRemote(patch: SharedPatch): void {
+  fromElsewhere = true
+  try {
+    set(applyPatch(shared(get()), patch))
+  } finally {
+    fromElsewhere = false
   }
 }
 
@@ -159,9 +176,13 @@ export function reopenTabs(): void {
   pendingTabs = left.length ? { ...pendingTabs, keys: left } : null
 }
 
-// panes opened, closed or moved are part of what is saved
+// what changes here goes to the other windows; panes opened, closed or moved are part of what is saved
 useKuna.subscribe((s, prev) => {
-  if (s.tabs !== prev.tabs || s.sidebarHidden !== prev.sidebarHidden) persist()
+  // the load itself is no change
+  if (!prev.loaded) return
+  const change = fromElsewhere ? null : diffShared(shared(prev), shared(s))
+  if (change) pending = pending ? mergePatch(pending, change) : change
+  if (change || s.tabs !== prev.tabs || s.sidebarHidden !== prev.sidebarHidden) persist()
 })
 
 function persist(): void {
@@ -170,7 +191,9 @@ function persist(): void {
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = undefined
-    void window.kuna.state.save(snapshot())
+    const patch = pending
+    pending = null
+    void window.kuna.state.save(patch, layout())
   }, 250)
 }
 
@@ -179,11 +202,14 @@ export function flushState(): void {
   if (!get().loaded) return
   clearTimeout(saveTimer)
   saveTimer = undefined
-  window.kuna.state.saveNow(snapshot())
+  const patch = pending
+  pending = null
+  window.kuna.state.saveNow(patch, layout())
 }
 
 export async function loadState(): Promise<void> {
-  const [state, sshHosts] = await Promise.all([window.kuna.state.load(), window.kuna.ssh.hosts()])
+  const [boot, sshHosts] = await Promise.all([window.kuna.state.load(), window.kuna.ssh.hosts()])
+  const { state, layout } = boot
   const first = state.projects[0]
   set({
     loaded: true,
@@ -201,14 +227,15 @@ export async function loadState(): Promise<void> {
     })),
     settings: state.settings,
     lastSeen: state.lastSeen,
-    hostnames: state.hostnames ?? {},
-    hidden: state.hidden ?? {},
-    names: state.names ?? {},
-    sidebarHidden: state.layout?.sidebarHidden ?? false,
+    hostnames: state.hostnames,
+    hidden: state.hidden,
+    names: state.names,
+    sidebarHidden: layout?.sidebarHidden ?? false,
     sshHosts,
-    sel: first ? `p:${first.id}` : null
+    // a new window starts on the row selected where it was opened from
+    sel: boot.sel ?? (first ? `p:${first.id}` : null)
   })
-  pendingTabs = state.layout?.tabs.length ? { keys: state.layout.tabs, focus: state.layout.focus } : null
+  pendingTabs = layout?.tabs.length ? { keys: layout.tabs, focus: layout.focus } : null
   syncHosts()
 }
 

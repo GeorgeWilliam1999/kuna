@@ -3,6 +3,7 @@ import { texToText } from '@shared/tex'
 import {
   activateSelection,
   activeAgentKey,
+  carryPane,
   closeTab,
   enterInsert,
   focusPane,
@@ -16,12 +17,14 @@ import {
   moveInGrid,
   movePaneInGrid,
   moveSelection,
+  newWindow,
   nudgeSelection,
   renameSelection,
   restoreHidden,
   resumeAgent,
   selectedNode,
   sendEsc,
+  stepWindow,
   swapTabs,
   targetFolder
 } from './actions'
@@ -79,6 +82,24 @@ function escPressed(): boolean {
   return false
 }
 
+/**
+ * ⌘← ⌘→ (⌥⌘ too), which go between windows in navigate. Elsewhere they are
+ * Ctrl+Shift+← → and Ctrl+Alt+← →, since Ctrl+Shift+Alt (⇧⌘) moves the tab.
+ */
+function isWindowKey(ev: KeyboardEvent): boolean {
+  if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return false
+  if (isMac) return ev.metaKey && !ev.ctrlKey && !ev.shiftKey
+  return ev.ctrlKey && !ev.metaKey && ev.shiftKey !== ev.altKey
+}
+
+/** ⌘← ⌘→: the previous / next window; ⌥⌘← ⌥⌘→ on a pane carry it there. */
+function windowKey(ev: KeyboardEvent, onPane: boolean): void {
+  stop(ev)
+  const dir = ev.key === 'ArrowLeft' ? -1 : 1
+  if (!(isMac ? ev.altKey : !ev.shiftKey)) stepWindow(dir)
+  else if (onPane) void carryPane(dir)
+}
+
 function globalShortcut(ev: KeyboardEvent): boolean {
   const s = get()
   const cmd = cmdKey(ev)
@@ -97,6 +118,11 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     if (isMac) return false
     // Ctrl+Shift+C is no copy shortcut of the page's (and the terminal would take it as Ctrl+C)
     document.execCommand('copy')
+    return true
+  }
+  if (k === 'w' && shift) {
+    // the window; its agents keep running
+    window.kuna.windows.close()
     return true
   }
   if (k === 'w' && !shift) {
@@ -152,7 +178,11 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     set({ overlay: { kind: 'project' }, mode: 'nav' })
     return true
   }
-  if (k === 'o' || (k === 'n' && shift)) {
+  if (k === 'n' && shift) {
+    newWindow()
+    return true
+  }
+  if (k === 'o') {
     const node = selectedNode()
     const project = node?.project ?? s.projects[0]
     const suggest = node?.kind === 'agent' && node.folder.id === '__other' ? node.agent.cwd : undefined
@@ -222,6 +252,7 @@ function sidebarKey(ev: KeyboardEvent): void {
   const s = get()
   const node = selectedNode()
   const draft = s.prompt
+  if (isWindowKey(ev)) return windowKey(ev, false)
   switch (ev.key) {
     case 'ArrowUp':
     case 'ArrowDown':
@@ -300,6 +331,7 @@ function paneKey(ev: KeyboardEvent): void {
     set({ inspectorPeek: false })
     if (ev.key === 'ArrowLeft' || ev.key === 'Escape') return stop(ev)
   }
+  if (isWindowKey(ev)) return windowKey(ev, true)
   if (ev.altKey && !ev.metaKey && !ev.ctrlKey && ev.key.startsWith('Arrow')) {
     // ⌥ arrows carry the pane that way, swapping it with the one there
     stop(ev)
@@ -464,6 +496,8 @@ function promptKey(ev: KeyboardEvent): void {
     if (s.prompt.trim()) launchDraft()
     return
   }
+  // with text in the box ⌘← ⌘→ move the caret; with none they go to another window
+  if (!s.prompt && isWindowKey(ev)) return windowKey(ev, false)
   if (ev.key.startsWith('Arrow') && !ev.metaKey && !ev.altKey && !ev.shiftKey) {
     const box = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null
     if (box && s.prompt) {

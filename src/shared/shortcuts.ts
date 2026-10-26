@@ -51,10 +51,10 @@ export function typesCharacter(ev: KeyPress, mac: boolean): boolean {
 export function keyLabelFor(text: string, mac: boolean): string {
   if (mac) return text
   return text
-    .replace(/⌘← ⌘→/g, 'Home End')
     .replace(/⌥ ?drag/g, 'Shift+drag')
     .replace(/Option\+drag/g, 'Shift+drag')
     .replace(/⇧⌘/g, 'Ctrl+Shift+Alt+')
+    .replace(/⌥⌘/g, 'Ctrl+Alt+')
     .replace(/⌘(?=\S)/g, 'Ctrl+Shift+')
     .replace(/⌘/g, 'Ctrl+Shift')
     .replace(/⌥(?=\S)/g, 'Alt+')
