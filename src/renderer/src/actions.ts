@@ -223,7 +223,13 @@ export function discardTyped(e: TermEntry): void {
 
 // ---------------------------------------------------------------- agents --
 
-export async function spawnAgent(projectId: string, folderId: string, prompt: string, resumeSessionId?: string): Promise<string | undefined> {
+export async function spawnAgent(
+  projectId: string,
+  folderId: string,
+  prompt: string,
+  resumeSessionId?: string,
+  backend?: string
+): Promise<string | undefined> {
   // size the tmux window like the pane it will most likely land in
   const s = get()
   const rows = gridRows(s.tabs.length + 1)
@@ -234,7 +240,7 @@ export async function spawnAgent(projectId: string, folderId: string, prompt: st
   const lines = Math.floor(h / rows.length / 17) - 2
   let res: Awaited<ReturnType<typeof window.kuna.agents.spawn>>
   try {
-    res = await window.kuna.agents.spawn({ projectId, folderId, prompt, cols, rows: lines, resumeSessionId })
+    res = await window.kuna.agents.spawn({ projectId, folderId, prompt, cols, rows: lines, resumeSessionId, backend })
   } catch (err) {
     res = { error: String(err) }
   }
@@ -301,7 +307,8 @@ export async function resumeAgent(): Promise<void> {
     return
   }
   const wasOpen = s.tabs.includes(key)
-  const next = await spawnAgent(where.project.id, where.folder.id, '', sessionId)
+  // the same backend it ran on (Claude Code on a local model resumes there too)
+  const next = await spawnAgent(where.project.id, where.folder.id, '', sessionId, a.backend ?? 'claude')
   if (!next) return
   await killAgent(key)
   if (wasOpen) openTab(next)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { targetFolder } from '../actions'
-import { set, useKuna } from '../store'
+import { DEFAULT_BACKEND, splitBackendPrefix } from '@shared/backends'
+import { refreshBackends, set, useKuna } from '../store'
 import { buildTree } from '../tree'
 import { TexText } from './TexText'
 
@@ -13,6 +14,7 @@ export function PromptBar(): React.JSX.Element {
   const agents = useKuna((s) => s.agents)
   const hosts = useKuna((s) => s.hosts)
   const escHint = useKuna((s) => s.escHint)
+  const backends = useKuna((s) => s.backends)
   const ref = useRef<HTMLTextAreaElement>(null)
   const active = zone === 'prompt'
 
@@ -25,6 +27,17 @@ export function PromptBar(): React.JSX.Element {
     const folder = project?.folders.find((f) => f.id === t!.folderId)
     return project && folder ? { project, folder } : null
   }, [sel, projects, agents, hosts])
+
+  // which agent Enter starts: `@id` at the start of the prompt, else the project's
+  const agent = useMemo(() => {
+    if (!target) return undefined
+    const id = splitBackendPrefix(prompt, backends).backend ?? target.project.backend ?? DEFAULT_BACKEND
+    return id === DEFAULT_BACKEND ? undefined : (backends.find((b) => b.id === id)?.name ?? `@${id}`)
+  }, [prompt, backends, target])
+
+  useEffect(() => {
+    if (active) void refreshBackends()
+  }, [active])
 
   useEffect(() => {
     const el = ref.current
@@ -56,6 +69,7 @@ export function PromptBar(): React.JSX.Element {
         ) : (
           <span className="pt-none">Select a folder to launch agents</span>
         )}
+        {agent && <span className="pt-agent">{agent}</span>}
       </div>
       <textarea
         ref={ref}

@@ -1,3 +1,4 @@
+import type { AgentBackend } from './backends'
 import type {
   AgentDetails,
   AgentRuntime,
@@ -45,6 +46,10 @@ export interface KunaApi {
     onUpdate(cb: (agents: AgentRuntime[]) => void): () => void
     details(key: string): Promise<AgentDetails | null>
     onDetails(cb: (key: string, details: AgentDetails) => void): () => void
+    /** Built-in agent backends plus agents.json's, with what was wrong in that file. */
+    backends(): Promise<{ backends: AgentBackend[]; errors: string[]; file: string }>
+    /** Open agents.json in the default editor (written with an example first). */
+    editBackends(): Promise<void>
   }
   usage: {
     get(): Promise<PlanUsage | null>
@@ -95,6 +100,8 @@ export const IPC = {
   hostsReconnect: 'hosts:reconnect',
   hostsState: 'hosts:state',
   agentsSpawn: 'agents:spawn',
+  agentsBackends: 'agents:backends',
+  agentsEditBackends: 'agents:edit-backends',
   agentsKill: 'agents:kill',
   agentsRespawn: 'agents:respawn',
   agentsInterest: 'agents:interest',

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { DEFAULT_BACKEND, envPrefix } from '@shared/backends'
 import { LOCAL_HOST } from '@shared/types'
 import { cleanTypedPath, pastePath } from '@shared/paths'
 import { hasMath, texToText } from '@shared/tex'
 import { agentTitle } from '../format'
-import { addFolder, addProject, removeFolder, removeProject, renameAgent, set, toast, updateFolder, updateProject, useKuna } from '../store'
+import { addFolder, addProject, refreshBackends, removeFolder, removeProject, renameAgent, set, toast, updateFolder, updateProject, useKuna } from '../store'
 import { REPO_COLORS } from '../themes'
 import { closeOverlay, useOverlayKeys } from './Overlays'
 import { TexText } from './TexText'
@@ -17,7 +18,15 @@ export function ProjectDialog({ editId }: { editId?: string }): React.JSX.Elemen
   const [command, setCommand] = useState(editing?.agentCommand ?? 'claude')
   const [color, setColor] = useState(editing?.color ?? '')
   const [launch, setLaunch] = useState<'background' | 'tmux'>(editing?.launch ?? 'background')
+  const backends = useKuna((s) => s.backends)
+  const [backend, setBackend] = useState(editing?.backend ?? DEFAULT_BACKEND)
+  const [backendErrors, setBackendErrors] = useState<string[]>([])
+  const chosen = backends.find((b) => b.id === backend)
   const listRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    void refreshBackends().then(setBackendErrors)
+  }, [])
 
   const hosts = useMemo(() => {
     const all = [{ alias: LOCAL_HOST, label: 'This Mac', detail: 'agents run locally' }].concat(
@@ -35,13 +44,14 @@ export function ProjectDialog({ editId }: { editId?: string }): React.JSX.Elemen
     listRef.current?.querySelector('.host-opt.on')?.scrollIntoView({ block: 'nearest' })
   }, [host])
 
+  const projectBackend = backend === DEFAULT_BACKEND ? undefined : backend
   const save = (): void => {
     const n = name.trim() || (host === LOCAL_HOST ? 'Local' : host)
     if (editing) {
-      updateProject(editing.id, { name: n, host, agentCommand: command.trim() || 'claude', launch, ...(color ? { color } : {}) })
+      updateProject(editing.id, { name: n, host, agentCommand: command.trim() || 'claude', launch, backend: projectBackend, ...(color ? { color } : {}) })
     } else {
       const p = addProject({ name: n, host, agentCommand: command.trim() || 'claude' })
-      updateProject(p.id, { launch, ...(color ? { color } : {}) })
+      updateProject(p.id, { launch, backend: projectBackend, ...(color ? { color } : {}) })
       set({ overlay: { kind: 'folder', projectId: p.id } })
       return
     }
@@ -93,22 +103,54 @@ export function ProjectDialog({ editId }: { editId?: string }): React.JSX.Elemen
           {!hosts.length && <div className="dim pad">No host matches “{hostFilter}”.</div>}
         </div>
         <label>
-          Agent command
-          <input value={command} onChange={(e) => setCommand(e.target.value)} placeholder="claude" spellCheck={false} />
+          Agent
+          <select value={backend} onChange={(e) => setBackend(e.target.value)}>
+            {backends.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name} · @{b.id}
+              </option>
+            ))}
+            {!chosen && <option value={backend}>@{backend} (not in agents.json)</option>}
+          </select>
           <span className="field-note">
-            Runs through your login shell on the host. Add flags like <code>--model opus</code> or <code>--permission-mode plan</code>.
+            {chosen?.note ? `${chosen.note}. ` : ''}Start a prompt with <code>@codex</code>, <code>@ollama</code>… to launch another agent once.{' '}
+            <button className="link" onClick={() => void window.kuna.agents.editBackends()}>
+              Add agents in agents.json
+            </button>
           </span>
+          {backendErrors.map((e) => (
+            <span key={e} className="field-note danger-note">
+              agents.json: {e}
+            </span>
+          ))}
         </label>
-        <div className="launch-choice" role="radiogroup" aria-label="Run new agents as">
-          <button className={launch === 'background' ? 'on' : ''} onClick={() => setLaunch('background')} role="radio" aria-checked={launch === 'background'}>
-            <strong>Claude background sessions</strong>
-            <span>Run by Claude Code's own daemon; also listed in <code>claude agents</code> and on your phone.</span>
-          </button>
-          <button className={launch === 'tmux' ? 'on' : ''} onClick={() => setLaunch('tmux')} role="radio" aria-checked={launch === 'tmux'}>
-            <strong>tmux sessions</strong>
-            <span>Kuna's own tmux server. Works with any agent CLI and old Claude versions.</span>
-          </button>
-        </div>
+        {backend === DEFAULT_BACKEND ? (
+          <>
+            <label>
+              Agent command
+              <input value={command} onChange={(e) => setCommand(e.target.value)} placeholder="claude" spellCheck={false} />
+              <span className="field-note">
+                Runs through your login shell on the host. Add flags like <code>--model opus</code> or <code>--permission-mode plan</code>.
+              </span>
+            </label>
+            <div className="launch-choice" role="radiogroup" aria-label="Run new agents as">
+              <button className={launch === 'background' ? 'on' : ''} onClick={() => setLaunch('background')} role="radio" aria-checked={launch === 'background'}>
+                <strong>Claude background sessions</strong>
+                <span>Run by Claude Code's own daemon; also listed in <code>claude agents</code> and on your phone.</span>
+              </button>
+              <button className={launch === 'tmux' ? 'on' : ''} onClick={() => setLaunch('tmux')} role="radio" aria-checked={launch === 'tmux'}>
+                <strong>tmux sessions</strong>
+                <span>Kuna's own tmux server. Works with any agent CLI and old Claude versions.</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          chosen && (
+            <span className="field-note">
+              Runs <code>{envPrefix(chosen.env) + chosen.command}</code> in Kuna's tmux server on the host.
+            </span>
+          )
+        )}
         <div className="swatches">
           {REPO_COLORS.map((c) => (
             <button key={c} className={`swatch-btn ${(color || editing?.color) === c ? 'on' : ''}`} style={{ background: c }} onClick={() => setColor(c)} aria-label={`Colour ${c}`} />

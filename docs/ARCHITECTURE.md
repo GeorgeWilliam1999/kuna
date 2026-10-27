@@ -47,11 +47,15 @@ Opening a pane runs `ssh -tt <host> sh .kuna/bin/kuna attach <id>` inside a loca
 2. a question on screen → **needs you**
 3. spinner on screen → **working**
 4. otherwise the last hook event: `PermissionRequest`/permission `Notification` → needs you, `Stop` → idle, tool or prompt events within a few seconds → working
-5. no hooks at all (other agent CLIs) → screen activity
+5. no hooks at all (other agent CLIs, see [Agents](AGENTS.md)) → screen activity
 
 Remote timestamps are converted with the host's clock offset, measured from each frame, so status and "unread" work across clock skew.
 
 **Transcripts** (rich, incremental). Claude Code writes every message to `~/.claude/projects/<cwd>/<session>.jsonl`. The `SessionStart` hook tells Kuna the path. When a frame reports the file grew, Kuna reads only the new bytes (`kuna read <path> <offset>`), decodes them with a UTF-8 decoder that holds back split characters, and feeds `TranscriptParser` (`src/shared/transcript.ts`). On a first look at a huge transcript it starts from the last 3 MB. The parser keeps a summary only: title, model, permission mode, context tokens (input + cache of the latest main-chain message), output tokens (deduplicated by message id), `TodoWrite` and `TaskCreate`/`TaskUpdate` tasks, running `Task`/`Agent` subagents, recent tool calls, edited files and every image/PDF path mentioned.
+
+## Agent backends
+
+`@shared/backends` lists the agent CLIs Kuna can start: built-in ones plus those in `agents.json` in userData (read on every launch by `src/main/backends.ts`). A backend is a command, optional `env` (put in front as `env 'K=V' …`, which every login shell accepts) and how the first prompt is passed (last argument, after a flag, or typed in with `kuna send` once the agent is up). The backend comes from `@id` at the start of the prompt, else the project's `backend`, else `claude`, which runs the project's agent command. Claude Code backends (`claude: true`) get the hook settings, `--session-id` and `--resume`; one with `env` always runs in tmux, since `claude --bg` sessions are started by the daemon with its environment. The backend id is kept in the agent's `meta.json`, so ⇧⌘R resumes on the same backend.
 
 ## Claude background sessions
 

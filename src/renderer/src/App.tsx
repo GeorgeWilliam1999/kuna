@@ -11,7 +11,7 @@ import { StatusBar } from './components/StatusBar'
 import { Toasts } from './components/Toasts'
 import { agentTitle } from './format'
 import { installKeys } from './keys'
-import { flushState, get, isHidden, loadState, noteReported, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
+import { flushState, get, isHidden, loadState, noteReported, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, refreshBackends, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
 import { restyleTerminals } from './terminals'
 import { applyFonts } from './fonts'
 import { applyTheme, themeById } from './themes'
@@ -111,6 +111,7 @@ export function App(): React.JSX.Element {
 
   useEffect(() => {
     void window.kuna.fonts().then((f) => set({ fonts: f }))
+    void refreshBackends()
   }, [])
 
   useEffect(() => {

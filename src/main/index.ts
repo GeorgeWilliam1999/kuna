@@ -4,6 +4,7 @@ import { app, BrowserWindow, clipboard, ipcMain, Menu, session, shell, type Menu
 import { IPC } from '@shared/ipc'
 import type { PersistedState, SpawnRequest } from '@shared/types'
 import { AgentService } from './agents'
+import { backendsFile, loadBackends } from './backends'
 import { ClaudeFilesService, MediaService } from './files'
 import { detectFonts } from './fonts'
 import { PtyService } from './pty'
@@ -19,7 +20,10 @@ let win: BrowserWindow | undefined
 const fromSource = !app.isPackaged
 const automation = fromSource ? process.env.KUNA_AUTOMATION : undefined
 const store = new Store()
-const agents = new AgentService(() => store.state.projects)
+const agents = new AgentService(
+  () => store.state.projects,
+  () => loadBackends().backends
+)
 const media = new MediaService(agents)
 const claudeFiles = new ClaudeFilesService(agents)
 const ptys = new PtyService(() => win?.webContents)
@@ -56,6 +60,11 @@ function registerIpc(): void {
   ipcMain.handle(IPC.hostsReconnect, (_e, host: string) => agents.reconnect(host))
 
   ipcMain.handle(IPC.agentsSpawn, (_e, req: SpawnRequest) => agents.spawn(req))
+  ipcMain.handle(IPC.agentsBackends, () => loadBackends())
+  ipcMain.handle(IPC.agentsEditBackends, async () => {
+    const err = await shell.openPath(backendsFile())
+    if (err) throw new Error(err)
+  })
   ipcMain.handle(IPC.agentsKill, (_e, key: string) => agents.kill(key))
   ipcMain.handle(IPC.agentsRespawn, (_e, key: string) => agents.respawn(key))
   ipcMain.on(IPC.agentsInterest, (_e, keys: string[]) => agents.setInterest(keys))

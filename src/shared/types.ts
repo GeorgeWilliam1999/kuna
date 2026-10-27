@@ -24,6 +24,11 @@ export interface Project {
   /** Command used to start new agents, e.g. `claude` or `claude --model opus`. */
   agentCommand: string
   /**
+   * Agent backend for new agents (`@shared/backends`): `claude` (the default)
+   * runs `agentCommand`; others run their own command, e.g. `codex`.
+   */
+  backend?: string
+  /**
    * How new agents run: as Claude Code background sessions (also visible in
    * `claude agents`; default for claude commands) or in Kuna's tmux server.
    */
@@ -122,6 +127,8 @@ export interface AgentRuntime {
   prompt?: string
   sessionId?: string
   command?: string
+  /** backend it was started with, when not the project's Claude Code command */
+  backend?: string
   status: AgentStatus
   /** Tool currently running, if any. */
   tool?: string
@@ -293,6 +300,8 @@ export interface SpawnRequest {
   rows: number
   /** start with `claude --resume <id>` instead of a new conversation */
   resumeSessionId?: string
+  /** agent backend id; otherwise the project's, or `@id` at the start of the prompt */
+  backend?: string
 }
 
 export const agentKey = (host: HostId, id: string): string => `${host}::${id}`

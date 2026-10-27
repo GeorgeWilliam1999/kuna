@@ -35,7 +35,9 @@ const api: KunaApi = {
     send: (key, text) => ipcRenderer.invoke(IPC.agentsSend, key, text),
     onUpdate: (cb) => on(IPC.agentsUpdate, cb),
     details: (key) => ipcRenderer.invoke(IPC.agentsDetails, key),
-    onDetails: (cb) => on(IPC.agentsDetailsUpdate, cb)
+    onDetails: (cb) => on(IPC.agentsDetailsUpdate, cb),
+    backends: () => ipcRenderer.invoke(IPC.agentsBackends),
+    editBackends: () => ipcRenderer.invoke(IPC.agentsEditBackends)
   },
   usage: {
     get: () => ipcRenderer.invoke(IPC.usageGet),

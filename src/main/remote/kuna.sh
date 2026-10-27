@@ -539,11 +539,12 @@ snapshot() {
     case "$s" in kuna_*) ;; *) continue ;; esac
     # Look at the bottom of the screen: 2 = a question/menu is waiting for a
     # choice, 1 = Claude Code's spinner ("✳ Blanching… (7s · ↓ 1.2k tokens)",
-    # older versions: "esc to interrupt"), 0 = neither.
+    # older versions: "esc to interrupt"; Codex: "esc to interrupt"; Gemini
+    # CLI: "(esc to cancel, 3s)"; OpenCode: "esc interrupt"), 0 = neither.
     scr=$(tm capture-pane -p -t "$s" 2>/dev/null | grep -v '^[[:space:]]*$' | tail -n 12)
     busy=0
     if printf '%s\n' "$scr" | grep -qE 'Enter to confirm|Esc to cancel|Do you want to'; then busy=2
-    elif printf '%s\n' "$scr" | grep -qE '… *\([0-9]|to interrupt'; then busy=1
+    elif printf '%s\n' "$scr" | grep -qE '… *\([0-9]|to interrupt|esc to cancel|esc interrupt'; then busy=1
     fi
     printf 'P\t%s\t%s\n' "$busy" "$line"
   done

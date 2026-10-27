@@ -12,6 +12,7 @@ import type {
   SshHostEntry
 } from '@shared/types'
 import { pruneArranged } from '@shared/arrange'
+import { BUILTIN_BACKENDS, type AgentBackend } from '@shared/backends'
 import { REPO_COLORS } from './themes'
 
 export type Zone = 'sidebar' | 'prompt' | 'pane'
@@ -44,6 +45,8 @@ interface KunaState {
   details: Record<string, AgentDetails>
   hosts: Record<string, HostState>
   sshHosts: SshHostEntry[]
+  /** agent backends: built-in ones and agents.json's */
+  backends: AgentBackend[]
   /** Claude plan usage (5-hour and weekly windows), freshest across hosts */
   usage: PlanUsage | null
 
@@ -87,6 +90,7 @@ export const useKuna = create<KunaState>(() => ({
   details: {},
   hosts: {},
   sshHosts: [],
+  backends: BUILTIN_BACKENDS,
   usage: null,
   tabs: [],
   zone: 'sidebar',
@@ -178,6 +182,17 @@ export function flushState(): void {
   clearTimeout(saveTimer)
   saveTimer = undefined
   window.kuna.state.saveNow(snapshot())
+}
+
+/** Re-read agents.json (cheap; called when a choice of backend is about to be shown). */
+export async function refreshBackends(): Promise<string[]> {
+  try {
+    const r = await window.kuna.agents.backends()
+    set({ backends: r.backends })
+    return r.errors
+  } catch {
+    return []
+  }
 }
 
 export async function loadState(): Promise<void> {

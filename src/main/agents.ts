@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { StringDecoder } from 'node:string_decoder'
+import { backendCommand, DEFAULT_BACKEND, isClaudeCommand, splitBackendPrefix, type AgentBackend } from '@shared/backends'
 import { TranscriptParser } from '@shared/transcript'
 import type { AgentDetails, AgentRuntime, HostId, PlanUsage, Project, SpawnRequest } from '@shared/types'
 import { agentKey } from '@shared/types'
@@ -35,7 +36,10 @@ export class AgentService extends EventEmitter {
   /** agents the user is looking at (open panes, selection); see setInterest */
   private interest = new Set<string>()
 
-  constructor(private projects: () => Project[]) {
+  constructor(
+    private projects: () => Project[],
+    private backends: () => AgentBackend[] = () => []
+  ) {
     super()
   }
 
@@ -136,20 +140,29 @@ export class AgentService extends EventEmitter {
       if ((host.state.status as string) !== 'ready') return { error: `${project.host} is not connected: ${host.state.error ?? host.state.status}` }
     }
 
-    const base = project.agentCommand.trim() || 'claude'
-    const isClaude = /(^|\/)claude(\s|$)/.test(base)
-    const prompt = req.prompt.trim()
-    if (isClaude && (project.launch ?? 'background') === 'background' && !req.resumeSessionId) {
+    const backends = this.backends()
+    const pre = splitBackendPrefix(req.prompt, backends)
+    const backendId = pre.backend ?? req.backend ?? project.backend ?? DEFAULT_BACKEND
+    const backend = backends.find((b) => b.id === backendId) ?? (backendId === DEFAULT_BACKEND ? { id: DEFAULT_BACKEND, name: 'Claude Code', command: 'claude' } : undefined)
+    if (!backend) return { error: `There is no agent called @${backendId}; agents.json lists them.` }
+    // Claude Code runs the project's own command (its flags, its path); other backends their own
+    const own = backend.id === DEFAULT_BACKEND
+    const base = own ? project.agentCommand.trim() || 'claude' : backend.command
+    const isClaude = own ? isClaudeCommand(base) : !!backend.claude
+    const prompt = pre.prompt.trim()
+    // the daemon starts background sessions with its own environment, so a backend with env runs in tmux
+    const hasEnv = !!backend.env && Object.keys(backend.env).length > 0
+    if (isClaude && !hasEnv && (project.launch ?? 'background') === 'background' && !req.resumeSessionId) {
       return this.spawnBackground(host, base, folder.path, prompt, project.id, folder.id)
     }
 
     const id = randomBytes(4).toString('hex')
     const sessionId = randomUUID()
     const resume = isClaude && req.resumeSessionId && /^[\w-]+$/.test(req.resumeSessionId) ? req.resumeSessionId : undefined
-    let cmd = base
-    if (isClaude) cmd += resume ? ` --resume ${resume}` : ` --session-id ${sessionId}`
-    if (isClaude) cmd += ` --settings "$HOME/.kuna/claude-hooks.json"`
-    if (prompt) cmd += ` "$(cat "$KUNA_DIR/prompt")"`
+    let extra = ''
+    if (isClaude) extra += resume ? ` --resume ${resume}` : ` --session-id ${sessionId}`
+    if (isClaude) extra += ` --settings "$HOME/.kuna/claude-hooks.json"`
+    const cmd = backendCommand(backend, base, extra, prompt ? `"$(cat "$KUNA_DIR/prompt")"` : undefined)
     const createdAt = Math.floor(Date.now() / 1000)
     const meta = {
       id,
@@ -159,13 +172,16 @@ export class AgentService extends EventEmitter {
       createdAt: createdAt + host.clockOffset,
       prompt: prompt.slice(0, 300),
       sessionId: isClaude ? (resume ?? sessionId) : undefined,
-      command: base
+      command: base,
+      backend: own ? undefined : backend.id
     }
     const res = await host.exec(
       ['spawn', id, b64(folder.path), b64(cmd), String(Math.max(40, req.cols)), String(Math.max(10, req.rows)), b64(JSON.stringify(meta)), b64(prompt)],
       { timeoutMs: 30_000 }
     )
     if (res.code !== 0) return { error: res.stderr.trim() || `spawn failed (${res.code})` }
+    // agents that take no prompt on the command line get it typed in once they are up
+    if (prompt && backend.prompt === 'type') setTimeout(() => host.exec(['send', id, b64(prompt)], { timeoutMs: 10_000 }).catch(() => {}), 3000)
 
     const key = agentKey(project.host, id)
     this.pendingSpawns.set(key, {
@@ -180,6 +196,7 @@ export class AgentService extends EventEmitter {
       prompt: meta.prompt,
       sessionId: meta.sessionId,
       command: base,
+      backend: meta.backend,
       status: 'starting',
       attnTs: 0,
       activityTs: createdAt,

@@ -37,6 +37,7 @@ interface Meta {
   prompt?: string
   sessionId?: string
   command?: string
+  backend?: string
 }
 
 /** One `J` line: a Claude Code background session (~/.claude/jobs/<id>/state.json). */
@@ -428,6 +429,7 @@ export function frameToAgents(host: HostId, frame: WatchFrame): AgentRuntime[] {
       prompt: meta.prompt,
       sessionId: meta.sessionId,
       command: meta.command,
+      backend: meta.backend,
       status,
       tool: status === 'working' && rec?.event === 'PreToolUse' ? rec.tool : undefined,
       activity: status === 'working' && rec?.event === 'PreToolUse' && rec.tool ? { kind: 'tool', tool: rec.tool } : undefined,
