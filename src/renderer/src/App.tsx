@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { AgentRuntime, AgentStatus } from '@shared/types'
-import { killing, openTab } from './actions'
+import { killing, openTab, windowCommand } from './actions'
 import { Inspector } from './components/Inspector'
 import { Overlays } from './components/Overlays'
 import { PaneGrid } from './components/PaneGrid'
@@ -11,20 +11,25 @@ import { StatusBar } from './components/StatusBar'
 import { Toasts } from './components/Toasts'
 import { agentTitle } from './format'
 import { installKeys } from './keys'
-import { flushState, get, isHidden, loadState, noteReported, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
+import { applyRemote, flushState, get, isHidden, loadState, noteReported, noteHostnames, pruneArrangement, pruneHidden, pruneLastSeen, reopenTabs, resolveCwds, resolveFolders, seedSeen, set, useKuna, withRealCwds } from './store'
+import { refreshBackends } from './store'
 import { restyleTerminals } from './terminals'
 import { applyFonts } from './fonts'
 import { applyTheme, themeById } from './themes'
 
 const prevStatus = new Map<string, AgentStatus>()
 
-/** macOS notification when an agent finishes a turn or asks for input while Kuna is in the background. */
+/**
+ * macOS notification when an agent finishes a turn or asks for input while
+ * Kuna is in the background. Every window sees the change; the one used last
+ * posts it.
+ */
 function notifyTransitions(list: AgentRuntime[]): void {
   const s = get()
   for (const a of list) {
     const before = prevStatus.get(a.key)
     prevStatus.set(a.key, a.status)
-    if (!before || before === a.status || !s.settings.notify || document.hasFocus()) continue
+    if (!before || before === a.status || !s.settings.notify || s.windows.anyFocused || !s.windows.notifier) continue
     const done = before === 'working' && a.status === 'idle'
     const asks = a.status === 'waiting'
     const failed = a.status === 'failed'
@@ -35,7 +40,8 @@ function notifyTransitions(list: AgentRuntime[]): void {
       silent: !asks
     })
     n.onclick = () => {
-      window.focus()
+      // its pane may be in another window: openTab goes there
+      if (!get().windows.elsewhere[a.key]) window.focus()
       openTab(a.key)
     }
   }
@@ -62,9 +68,14 @@ function wireMain(): () => void {
       reopenTabs()
     }),
     window.kuna.agents.onDetails((key, details) => set((s) => ({ details: { ...s.details, [key]: details } }))),
-    window.kuna.usage.onUpdate((usage) => set({ usage }))
+    window.kuna.usage.onUpdate((usage) => set({ usage })),
+    window.kuna.state.onChange(applyRemote),
+    window.kuna.windows.onInfo((windows) => set({ windows })),
+    window.kuna.windows.onCommand(windowCommand)
   ]
   void window.kuna.usage.get().then((usage) => set({ usage }))
+  // a window opened after the others has missed what was read from transcripts so far
+  void window.kuna.agents.allDetails().then((details) => set((s) => ({ details: { ...details, ...s.details } })))
   return () => offs.forEach((off) => off())
 }
 
@@ -78,6 +89,18 @@ function useInterest(): void {
     const t = setTimeout(() => window.kuna.agents.interest([...keys]), 250)
     return () => clearTimeout(t)
   }, [tabs, sel])
+}
+
+/** The window's title (Window menu, Mission Control, ⌘`): the focused pane's agent. */
+function useTitle(): void {
+  const title = useKuna((s) => {
+    const key = s.tabs[s.paneIndex]
+    const a = key ? s.agents[key] : undefined
+    return a ? agentTitle(a, s.details[a.key]) : 'Kuna'
+  })
+  useEffect(() => {
+    document.title = title
+  }, [title])
 }
 
 export function App(): React.JSX.Element {
@@ -95,6 +118,7 @@ export function App(): React.JSX.Element {
   const inspectorWidth = useKuna((s) => s.settings.inspectorWidth)
   const mode = useKuna((s) => s.mode)
   useInterest()
+  useTitle()
 
   useEffect(() => {
     const off = wireMain()
@@ -111,6 +135,7 @@ export function App(): React.JSX.Element {
 
   useEffect(() => {
     void window.kuna.fonts().then((f) => set({ fonts: f }))
+    void refreshBackends()
   }, [])
 
   useEffect(() => {

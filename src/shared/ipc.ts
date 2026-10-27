@@ -1,3 +1,4 @@
+import type { AgentBackend } from './backends'
 import type {
   AgentDetails,
   AgentRuntime,
@@ -7,19 +8,54 @@ import type {
   HostState,
   MediaPage,
   PlanUsage,
-  PersistedState,
   SpawnRequest,
-  SshHostEntry
+  SshHostEntry,
+  WindowBoot,
+  WindowLayout,
+  WindowsInfo
 } from './types'
+import type { SharedPatch } from './sync'
+
+/** What the main process asks a window to do. */
+export type WindowCommand =
+  /** open this agent's pane here and focus it (carried over from another window) */
+  | { kind: 'adopt'; key: string }
+  /** focus this agent's pane (opened from another window, or a notification) */
+  | { kind: 'focus'; key: string }
+  /** close this agent's pane (it was stopped from another window) */
+  | { kind: 'close'; key: string }
+  /** ⌘← ⌘→ landed here */
+  | { kind: 'arrive' }
+  /** the New Window menu item */
+  | { kind: 'new-window' }
 
 /** The API exposed to the renderer as `window.kuna`. */
 export interface KunaApi {
   platform: string
   state: {
-    load(): Promise<PersistedState>
-    save(state: PersistedState): Promise<void>
+    load(): Promise<WindowBoot>
+    /** a change to what all windows share (null: none), and this window's panes */
+    save(patch: SharedPatch | null, layout: WindowLayout): Promise<void>
     /** synchronous save, for when the window is closing */
-    saveNow(state: PersistedState): void
+    saveNow(patch: SharedPatch | null, layout: WindowLayout): void
+    /** a change another window made */
+    onChange(cb: (patch: SharedPatch) => void): () => void
+  }
+  windows: {
+    /** a new window, with this sidebar row selected */
+    open(sel: string | null): void
+    /** close this window */
+    close(): void
+    /** go to the previous / next window; false when there is no other */
+    step(dir: -1 | 1): Promise<boolean>
+    /** move an agent's pane from this window to the previous / next one; false when there is no other */
+    carry(key: string, dir: -1 | 1): Promise<boolean>
+    /** go to the window that has the agent's pane; false when no other window has it */
+    reveal(key: string): Promise<boolean>
+    /** close the agent's pane in whichever other window has it */
+    closePane(key: string): void
+    onInfo(cb: (info: WindowsInfo) => void): () => void
+    onCommand(cb: (cmd: WindowCommand) => void): () => void
   }
   ssh: {
     hosts(): Promise<SshHostEntry[]>
@@ -44,7 +80,13 @@ export interface KunaApi {
     send(key: string, text: string): Promise<{ error?: string }>
     onUpdate(cb: (agents: AgentRuntime[]) => void): () => void
     details(key: string): Promise<AgentDetails | null>
+    /** every agent's details read so far (a window that just opened) */
+    allDetails(): Promise<Record<string, AgentDetails>>
     onDetails(cb: (key: string, details: AgentDetails) => void): () => void
+    /** Built-in agent backends plus agents.json's, with what was wrong in that file. */
+    backends(): Promise<{ backends: AgentBackend[]; errors: string[]; file: string }>
+    /** Open agents.json in the default editor (written with an example first). */
+    editBackends(): Promise<void>
   }
   usage: {
     get(): Promise<PlanUsage | null>
@@ -89,12 +131,23 @@ export const IPC = {
   stateLoad: 'state:load',
   stateSave: 'state:save',
   stateSaveSync: 'state:save-sync',
+  stateChanged: 'state:changed',
+  windowOpen: 'window:open',
+  windowClose: 'window:close',
+  windowStep: 'window:step',
+  windowCarry: 'window:carry',
+  windowReveal: 'window:reveal',
+  windowClosePane: 'window:close-pane',
+  windowInfo: 'window:info',
+  windowCommand: 'window:command',
   sshHosts: 'ssh:hosts',
   fonts: 'app:fonts',
   hostsWatch: 'hosts:watch',
   hostsReconnect: 'hosts:reconnect',
   hostsState: 'hosts:state',
   agentsSpawn: 'agents:spawn',
+  agentsBackends: 'agents:backends',
+  agentsEditBackends: 'agents:edit-backends',
   agentsKill: 'agents:kill',
   agentsRespawn: 'agents:respawn',
   agentsInterest: 'agents:interest',
@@ -102,6 +155,7 @@ export const IPC = {
   agentsSend: 'agents:send',
   agentsUpdate: 'agents:update',
   agentsDetails: 'agents:details',
+  agentsAllDetails: 'agents:all-details',
   agentsDetailsUpdate: 'agents:details-update',
   usageGet: 'usage:get',
   usageUpdate: 'usage:update',

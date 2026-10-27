@@ -24,6 +24,11 @@ export interface Project {
   /** Command used to start new agents, e.g. `claude` or `claude --model opus`. */
   agentCommand: string
   /**
+   * Agent backend for new agents (`@shared/backends`): `claude` (the default)
+   * runs `agentCommand`; others run their own command, e.g. `codex`.
+   */
+  backend?: string
+  /**
    * How new agents run: as Claude Code background sessions (also visible in
    * `claude agents`; default for claude commands) or in Kuna's tmux server.
    */
@@ -79,8 +84,54 @@ export interface PersistedState {
   hidden?: Record<string, number>
   /** agent key → the name the user gave it in Kuna (⌘R) */
   names?: Record<string, string>
-  /** the panes that were open (agent keys, in order), the focused one, and whether the sidebar was hidden */
-  layout?: { tabs: string[]; focus?: string; sidebarHidden?: boolean }
+  /** the windows open at the last quit, in the order they were opened */
+  windows?: WindowLayout[]
+  /** before Kuna had several windows: the one window's panes (read once, as the first window) */
+  layout?: WindowLayout
+}
+
+/** One window's own part of the saved state. */
+export interface WindowLayout {
+  /** the panes that were open (agent keys, in order) */
+  tabs: string[]
+  /** the focused one */
+  focus?: string
+  sidebarHidden?: boolean
+  /** where it was on screen (its size and place out of full screen) */
+  bounds?: { x: number; y: number; width: number; height: number }
+  fullScreen?: boolean
+}
+
+/** What every window shows the same: the saved state without the windows. */
+export interface SharedState {
+  projects: Project[]
+  settings: Settings
+  lastSeen: Record<string, number>
+  hostnames: Record<string, string>
+  hidden: Record<string, number>
+  names: Record<string, string>
+}
+
+/** What a window starts from. */
+export interface WindowBoot {
+  state: SharedState
+  /** its panes, when it is a window Kuna had open at the last quit */
+  layout?: WindowLayout
+  /** the sidebar row selected in the window it was opened from */
+  sel?: string | null
+}
+
+/** What a window knows about the others. */
+export interface WindowsInfo {
+  /** its place in the ⌘← ⌘→ order, and how many windows there are */
+  index: number
+  count: number
+  /** some Kuna window has the focus */
+  anyFocused: boolean
+  /** the window used last: it posts the notifications */
+  notifier: boolean
+  /** agents with a pane in another window */
+  elsewhere: Record<string, true>
 }
 
 /**
@@ -122,6 +173,8 @@ export interface AgentRuntime {
   prompt?: string
   sessionId?: string
   command?: string
+  /** backend it was started with, when not the project's Claude Code command */
+  backend?: string
   status: AgentStatus
   /** Tool currently running, if any. */
   tool?: string
@@ -293,6 +346,8 @@ export interface SpawnRequest {
   rows: number
   /** start with `claude --resume <id>` instead of a new conversation */
   resumeSessionId?: string
+  /** agent backend id; otherwise the project's, or `@id` at the start of the prompt */
+  backend?: string
 }
 
 export const agentKey = (host: HostId, id: string): string => `${host}::${id}`

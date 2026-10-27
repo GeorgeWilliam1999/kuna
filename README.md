@@ -41,8 +41,11 @@ Everything started with `claude --bg` shows up under its folder with what it's d
 
 ![A session asking which binning to use, with its answers in the inspector](docs/images/doc-question.png)
 
+### Codex, Gemini, local models
+Claude Code is the default, but a project can run Codex, Gemini CLI, OpenCode or Aider instead, or Claude Code on a local model through Colibri or Ollama. Start a prompt with `@codex` to launch one just once, and add your own in `agents.json`: see [Agents](docs/AGENTS.md).
+
 ### Keyboard first
-Arrows move between the sidebar and the panes, typing talks to the focused agent, Esc Esc stops. Everything else is one shortcut away: ⌘/ lists them.
+Arrows move between the sidebar and the panes, typing talks to the focused agent, Esc Esc stops. Everything else is one shortcut away: ⌘/ lists them. ⇧⌘N opens another window with its own panes and the same sidebar; ⌘← ⌘→ jump between windows.
 
 ![The shortcut overview](docs/images/doc-help.png)
 

@@ -3,6 +3,7 @@ import { texToText } from '@shared/tex'
 import {
   activateSelection,
   activeAgentKey,
+  carryPane,
   closeTab,
   enterInsert,
   focusPane,
@@ -16,12 +17,14 @@ import {
   moveInGrid,
   movePaneInGrid,
   moveSelection,
+  newWindow,
   nudgeSelection,
   renameSelection,
   restoreHidden,
   resumeAgent,
   selectedNode,
   sendEsc,
+  stepWindow,
   swapTabs,
   targetFolder
 } from './actions'
@@ -78,6 +81,19 @@ function escPressed(): boolean {
   return false
 }
 
+/** ⌘← ⌘→ (⌥⌘ too), which go between windows in navigate. */
+function isWindowKey(ev: KeyboardEvent): boolean {
+  return ev.metaKey && !ev.ctrlKey && !ev.shiftKey && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')
+}
+
+/** ⌘← ⌘→: the previous / next window; ⌥⌘← ⌥⌘→ on a pane carry it there. */
+function windowKey(ev: KeyboardEvent, onPane: boolean): void {
+  stop(ev)
+  const dir = ev.key === 'ArrowLeft' ? -1 : 1
+  if (!ev.altKey) stepWindow(dir)
+  else if (onPane) void carryPane(dir)
+}
+
 function globalShortcut(ev: KeyboardEvent): boolean {
   const s = get()
   const cmd = ev.metaKey && !ev.ctrlKey
@@ -92,6 +108,11 @@ function globalShortcut(ev: KeyboardEvent): boolean {
   if (k === 'c' && !ev.shiftKey && s.zone !== 'prompt') {
     // the text selected in an agent (Option+drag), whatever has the focus; else the usual copy
     return copyTerminalSelection(s.zone === 'pane' ? focusedKey() : undefined)
+  }
+  if (k === 'w' && ev.shiftKey) {
+    // the window; its agents keep running
+    window.kuna.windows.close()
+    return true
   }
   if (k === 'w' && !ev.shiftKey) {
     const key = s.zone === 'pane' ? focusedKey() : activeAgentKey()
@@ -145,7 +166,11 @@ function globalShortcut(ev: KeyboardEvent): boolean {
     set({ overlay: { kind: 'project' }, mode: 'nav' })
     return true
   }
-  if (k === 'o' || (k === 'n' && ev.shiftKey)) {
+  if (k === 'n' && ev.shiftKey) {
+    newWindow()
+    return true
+  }
+  if (k === 'o') {
     const node = selectedNode()
     const project = node?.project ?? s.projects[0]
     const suggest = node?.kind === 'agent' && node.folder.id === '__other' ? node.agent.cwd : undefined
@@ -215,6 +240,7 @@ function sidebarKey(ev: KeyboardEvent): void {
   const s = get()
   const node = selectedNode()
   const draft = s.prompt
+  if (isWindowKey(ev)) return windowKey(ev, false)
   switch (ev.key) {
     case 'ArrowUp':
     case 'ArrowDown':
@@ -293,6 +319,7 @@ function paneKey(ev: KeyboardEvent): void {
     set({ inspectorPeek: false })
     if (ev.key === 'ArrowLeft' || ev.key === 'Escape') return stop(ev)
   }
+  if (isWindowKey(ev)) return windowKey(ev, true)
   if (ev.altKey && !ev.metaKey && !ev.ctrlKey && ev.key.startsWith('Arrow')) {
     // ⌥ arrows carry the pane that way, swapping it with the one there
     stop(ev)
@@ -457,6 +484,8 @@ function promptKey(ev: KeyboardEvent): void {
     if (s.prompt.trim()) launchDraft()
     return
   }
+  // with text in the box ⌘← ⌘→ move the caret; with none they go to another window
+  if (!s.prompt && isWindowKey(ev)) return windowKey(ev, false)
   if (ev.key.startsWith('Arrow') && !ev.metaKey && !ev.altKey && !ev.shiftKey) {
     const box = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null
     if (box && s.prompt) {

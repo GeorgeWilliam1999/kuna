@@ -21,13 +21,13 @@ Kuna runs commands **as you** on this Mac and on every SSH host you add a projec
 ## What Kuna trusts
 
 - **Your `~/.ssh/config`** and the files it includes. Kuna runs your own `ssh`, so anything those files can do (`ProxyCommand`, `LocalCommand`) happens as it would in a terminal.
-- **The agent command** of each project (`claude` by default). It runs through your login shell on the host, exactly as typed.
+- **The agent command** of each project (`claude` by default), and the agent backends in `agents.json` next to Kuna's state file ([Agents](docs/AGENTS.md)). They run through your login shell on the host, exactly as written.
 - **The hosts you add.** Kuna installs a small POSIX shell script in `~/.kuna` there and runs it over ssh; whoever controls that account controls what Kuna sees from it.
 
 ## What Kuna stores and sends
 
 - No telemetry and no cloud service: the only network traffic is your own ssh connections.
-- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, folders, settings, layout; no credentials).
+- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, folders, settings, each window's panes and place; no credentials).
 - On each host: `~/.kuna/`, made private (mode 700) — the helper, its tmux configuration, Kuna's hook settings, and per agent its command, first prompt and latest status. Kuna's hooks only record what happens; they print nothing, so they can never approve a tool call. The status-line command records your plan usage there.
 - ssh connections Kuna opens stay shared for 10 minutes after it quits (`ControlPersist`); their sockets live in `~/.kuna/ssh`, readable only by you.
 
@@ -35,4 +35,4 @@ Kuna runs commands **as you** on this Mac and on every SSH host you add a projec
 
 - **Prompts are visible in the process list.** An agent's first prompt is passed to `claude` as an argument, so other users on a shared node can see it with `ps` (unless the node hides other users' processes). Don't put secrets in launch prompts; type them into the agent instead.
 - **The app is not signed or notarised.** Build it from source (`npm run dist`) rather than running a copy someone sends you.
-- **Anything in the agent command is stored** in `~/.kuna` on the host (private to you) and in Kuna's state file on your Mac. Prefer your shell's environment over putting API keys there.
+- **Anything in the agent command is stored** in `~/.kuna` on the host (private to you) and in Kuna's state file on your Mac; a backend's `env` from `agents.json` is stored in `~/.kuna` too and is visible in the process list while the agent starts. Prefer your shell's environment over putting API keys there.

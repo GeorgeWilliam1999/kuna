@@ -23,6 +23,7 @@ export function Inspector(): React.JSX.Element {
   useKuna((s) => (key ? s.names[key] : undefined))
   const projects = useKuna((s) => s.projects)
   const agents = useKuna((s) => s.agents)
+  const backends = useKuna((s) => s.backends)
   const where = useMemo(
     () => (key ? folderOfAgent(projects, Object.values(agents), hosts).get(key) : undefined),
     [projects, agents, hosts, key]
@@ -54,6 +55,7 @@ export function Inspector(): React.JSX.Element {
           <span className="swatch" />
           {where ? <TexText text={where.folder.name} /> : a.cwd} <span className="dim">on {a.host === 'local' ? 'this mac' : a.host}</span>
         </div>
+        {a.backend && <div className="insp-where dim">{backends.find((b) => b.id === a.backend)?.name ?? a.backend}</div>}
         <h2>{agentTitle(a, d)}</h2>
         <div className={`insp-status st-${a.status}`}>
           <StatusDot status={a.status} />
