@@ -315,6 +315,11 @@ export class AgentService extends EventEmitter {
     return this.transcripts.get(key)?.details ?? null
   }
 
+  /** Everything read from transcripts so far, for a window that just opened. */
+  allDetails(): Record<string, AgentDetails> {
+    return Object.fromEntries([...this.transcripts].flatMap(([k, t]) => (t.details ? [[k, t.details] as const] : [])))
+  }
+
   // ------------------------------------------------------- transcripts ----
 
   private pullTranscript(host: Host, a: AgentRuntime): void {

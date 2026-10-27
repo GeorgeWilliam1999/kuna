@@ -7,10 +7,13 @@ import { cleanTypedPath, pastePath } from '@shared/paths'
 import { gridRows, neighbor } from '@shared/layout'
 import { extractMediaPaths, mediaKind, normalizePosix, resolveAgainst, viewerOrder } from '@shared/media'
 import { parseSshConfig } from '@shared/sshConfig'
+import { applyPatch, diffShared, mergePatch } from '@shared/sync'
 import { hasMath, splitMath, texToText } from '@shared/tex'
 import { TranscriptParser } from '@shared/transcript'
 import { isAgentId, isHostId, isTmuxKeys, splitAgentKey } from '@shared/validate'
 import { deriveStatus, frameToAgents, parseFrame, parseRateLimits } from '@shared/watch'
+import { cascade, placeOnScreen, stepWindow, windowOrder } from '@shared/windows'
+import type { SharedState } from '@shared/types'
 
 describe('gridRows', () => {
   it('splits panes into balanced rows', () => {
@@ -476,5 +479,83 @@ describe('validate', () => {
     expect(isTmuxKeys(['-l', 'rm -rf ~'])).toBe(false)
     expect(isTmuxKeys(['-X', 'copy-pipe', 'sh'])).toBe(false)
     expect(isTmuxKeys([])).toBe(false)
+  })
+})
+
+describe('windows', () => {
+  const at = (id: number, x: number, y: number, opened = id) => ({ id, bounds: { x, y, width: 800, height: 600 }, opened })
+
+  it('orders windows left to right, then top to bottom, then by when they opened', () => {
+    expect(windowOrder([at(1, 900, 0), at(2, 0, 0)])).toEqual([2, 1])
+    expect(windowOrder([at(1, 0, 500), at(2, 0, 0)])).toEqual([2, 1])
+    // two full-screen windows, each on its own Space
+    expect(windowOrder([at(2, 0, 0, 5), at(1, 0, 0, 3)])).toEqual([1, 2])
+  })
+
+  it('steps to the next or previous window, wrapping around', () => {
+    expect(stepWindow([2, 1, 3], 1, 1)).toBe(3)
+    expect(stepWindow([2, 1, 3], 3, 1)).toBe(2)
+    expect(stepWindow([2, 1, 3], 2, -1)).toBe(3)
+    // with two windows either way is the other one
+    expect(stepWindow([1, 2], 1, -1)).toBe(2)
+    expect(stepWindow([1], 1, 1)).toBeNull()
+    expect(stepWindow([1, 2], 7, 1)).toBeNull()
+  })
+
+  it('cascades a new window, back to the top left when it would run off the screen', () => {
+    const area = { x: 0, y: 25, width: 1920, height: 1055 }
+    expect(cascade({ x: 100, y: 100, width: 1200, height: 800 }, area)).toEqual({ x: 128, y: 128, width: 1200, height: 800 })
+    expect(cascade({ x: 600, y: 200, width: 1300, height: 800 }, area)).toEqual({ x: 0, y: 25, width: 1300, height: 800 })
+    expect(cascade({ x: 0, y: 25, width: 3000, height: 800 }, area).width).toBe(1920)
+  })
+
+  it('puts a saved window back unless its screen is gone', () => {
+    const main = { x: 0, y: 25, width: 1920, height: 1055 }
+    const right = { x: 1920, y: 0, width: 2560, height: 1415 }
+    const saved = { x: 2100, y: 100, width: 1600, height: 1000 }
+    expect(placeOnScreen(saved, [main, right], main)).toEqual(saved)
+    // the second display was unplugged: centred on the main one
+    expect(placeOnScreen(saved, [main], main)).toEqual({ x: 160, y: 53, width: 1600, height: 1000 })
+    // its top edge above the screen can't be dragged
+    expect(placeOnScreen({ ...saved, x: 100, y: -400 }, [main], main).y).toBe(53)
+  })
+})
+
+describe('shared state between windows', () => {
+  const base: SharedState = {
+    projects: [],
+    settings: { theme: 'cherenkov', inspector: true, sidebarWidth: 280, notify: true },
+    lastSeen: { 'local::a': 10, 'local::b': 20 },
+    hostnames: {},
+    hidden: {},
+    names: { 'local::a': 'fit' }
+  }
+
+  it('sends records key by key and the projects whole', () => {
+    expect(diffShared(base, { ...base })).toBeNull()
+    const projects = [{ id: 'p', name: 'P', host: 'local', color: '#fff', agentCommand: 'claude', folders: [] }]
+    const next = { ...base, projects, lastSeen: { 'local::a': 10, 'local::c': 30 }, settings: { ...base.settings, termFontSize: 14 } }
+    expect(diffShared(base, next)).toEqual({
+      projects,
+      lastSeen: { set: { 'local::c': 30 }, del: ['local::b'] },
+      settings: { set: { termFontSize: 14 } }
+    })
+  })
+
+  it('keeps what another window changed meanwhile', () => {
+    // this window marked a seen; the other one, meanwhile, b
+    const here = diffShared(base, { ...base, lastSeen: { ...base.lastSeen, 'local::a': 50 } })!
+    const there = { ...base, lastSeen: { ...base.lastSeen, 'local::b': 60 } }
+    expect(applyPatch(there, here).lastSeen).toEqual({ 'local::a': 50, 'local::b': 60 })
+    // fields the patch leaves alone stay the same objects
+    expect(applyPatch(there, here).names).toBe(there.names)
+  })
+
+  it('merges patches in order', () => {
+    const a = { names: { set: { 'local::x': 'one' }, del: ['local::a'] } }
+    const b = { names: { set: { 'local::a': 'back' }, del: ['local::x'] } }
+    expect(mergePatch(a, b)).toEqual({ names: { set: { 'local::a': 'back' }, del: ['local::x'] } })
+    const merged = mergePatch(a, b)
+    expect(applyPatch(base, merged).names).toEqual(applyPatch(applyPatch(base, a), b).names)
   })
 })

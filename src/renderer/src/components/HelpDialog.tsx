@@ -11,7 +11,10 @@ const SECTIONS: { title: string; keys: [string, string][] }[] = [
       ['⌥ arrows', 'move the pane that way, swapping it with the one there'],
       ['⇧⌘← / ⇧⌘→', 'move the tab left / right'],
       ['⌘S', 'hide or show the left sidebar (← from the first pane peeks)'],
-      ['⌘B', 'hide or show the right inspector (→ from the last pane peeks)']
+      ['⌘B', 'hide or show the right inspector (→ from the last pane peeks)'],
+      ['⇧⌘N · ⇧⌘W', 'new window · close it (its agents keep running)'],
+      ['⌘← / ⌘→', 'the previous / next window'],
+      ['⌥⌘← / ⌥⌘→', 'carry the pane to the previous / next window']
     ]
   },
   {

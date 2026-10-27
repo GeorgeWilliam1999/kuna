@@ -24,6 +24,8 @@ src/
     watch.ts          parse `kuna watch` frames, derive agent status
     transcript.ts     incremental Claude Code transcript summariser
     layout.ts         pane grid shape and arrow-key neighbours
+    windows.ts        window order for ⌘← ⌘→, placing new and restored windows
+    sync.ts           patches of the state the windows share
     media.ts          find image/PDF paths in text, path normalisation
     sshConfig.ts      list hosts from ~/.ssh/config (with Include)
   main/
@@ -33,7 +35,8 @@ src/
     pty.ts            node-pty terminals for open panes and sign-in
     files.ts          media listing/fetching, .claude browser, folder completion
     store.ts          persisted state (userData/kuna-state.json)
-    index.ts          window, menu, IPC wiring, automation hooks
+    windows.ts        the windows: order, panes per window, what comes back at launch
+    index.ts          windows, menu, IPC wiring, automation hooks
   preload/index.ts    contextBridge → window.kuna
   renderer/src/
     store.ts          zustand store and persisted-state actions
@@ -71,7 +74,7 @@ KUNA_AUTOMATION=script.js \               # run in the renderer after load
 npx electron .
 ```
 
-The script can use `window.kunaInternals` (`store`, `actions`, `terminals`), dispatch `KeyboardEvent`s on `window` to exercise the real key handling, call `kunaDev.capture(name)` and finally `kunaDev.quit()`. Renderer `console.log` output is forwarded to stdout in this mode.
+The script can use `window.kunaInternals` (`store`, `actions`, `terminals`), dispatch `KeyboardEvent`s on `window` to exercise the real key handling, call `kunaDev.capture(name)` and finally `kunaDev.quit()`. Renderer `console.log` output is forwarded to stdout in this mode. The script runs in the first window; `kunaDev.eval(n, code)` runs code in the n-th window (in the order they were opened), whose `kunaDev.key` and `kunaDev.capture` then act on that window.
 
 ## Conventions
 

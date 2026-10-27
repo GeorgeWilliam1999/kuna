@@ -11,8 +11,19 @@ const api: KunaApi = {
   platform: process.platform,
   state: {
     load: () => ipcRenderer.invoke(IPC.stateLoad),
-    save: (s) => ipcRenderer.invoke(IPC.stateSave, s),
-    saveNow: (s) => void ipcRenderer.sendSync(IPC.stateSaveSync, s)
+    save: (patch, layout) => ipcRenderer.invoke(IPC.stateSave, patch, layout),
+    saveNow: (patch, layout) => void ipcRenderer.sendSync(IPC.stateSaveSync, patch, layout),
+    onChange: (cb) => on(IPC.stateChanged, cb)
+  },
+  windows: {
+    open: (sel) => ipcRenderer.send(IPC.windowOpen, sel),
+    close: () => ipcRenderer.send(IPC.windowClose),
+    step: (dir) => ipcRenderer.invoke(IPC.windowStep, dir),
+    carry: (key, dir) => ipcRenderer.invoke(IPC.windowCarry, key, dir),
+    reveal: (key) => ipcRenderer.invoke(IPC.windowReveal, key),
+    closePane: (key) => ipcRenderer.send(IPC.windowClosePane, key),
+    onInfo: (cb) => on(IPC.windowInfo, cb),
+    onCommand: (cb) => on(IPC.windowCommand, cb)
   },
   fonts: () => ipcRenderer.invoke(IPC.fonts),
   clipboardText: () => ipcRenderer.invoke(IPC.clipboardText),
@@ -35,6 +46,7 @@ const api: KunaApi = {
     send: (key, text) => ipcRenderer.invoke(IPC.agentsSend, key, text),
     onUpdate: (cb) => on(IPC.agentsUpdate, cb),
     details: (key) => ipcRenderer.invoke(IPC.agentsDetails, key),
+    allDetails: () => ipcRenderer.invoke(IPC.agentsAllDetails),
     onDetails: (cb) => on(IPC.agentsDetailsUpdate, cb),
     backends: () => ipcRenderer.invoke(IPC.agentsBackends),
     editBackends: () => ipcRenderer.invoke(IPC.agentsEditBackends)
@@ -79,5 +91,7 @@ contextBridge.exposeInMainWorld('kunaDev', {
   key: (keyCode: string, modifiers?: string[]) => ipcRenderer.invoke('dev:key', keyCode, modifiers),
   paste: (text: string, viaShortcut?: boolean) => ipcRenderer.invoke('dev:paste', text, viaShortcut),
   drag: (from: [number, number], to: [number, number], modifiers?: string[]) => ipcRenderer.invoke('dev:drag', from, to, modifiers),
-  menu: (role: string) => ipcRenderer.invoke('dev:menu', role)
+  menu: (role: string) => ipcRenderer.invoke('dev:menu', role),
+  // run code in the n-th window (in the order they were opened) and return its result
+  eval: (n: number, code: string) => ipcRenderer.invoke('dev:eval', n, code)
 })

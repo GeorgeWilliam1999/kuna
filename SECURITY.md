@@ -27,7 +27,7 @@ Kuna runs commands **as you** on this Mac and on every SSH host you add a projec
 ## What Kuna stores and sends
 
 - No telemetry and no cloud service: the only network traffic is your own ssh connections.
-- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, folders, settings, layout; no credentials).
+- On this Mac: `~/Library/Application Support/Kuna/kuna-state.json` (projects, folders, settings, each window's panes and place; no credentials).
 - On each host: `~/.kuna/`, made private (mode 700) — the helper, its tmux configuration, Kuna's hook settings, and per agent its command, first prompt and latest status. Kuna's hooks only record what happens; they print nothing, so they can never approve a tool call. The status-line command records your plan usage there.
 - ssh connections Kuna opens stay shared for 10 minutes after it quits (`ControlPersist`); their sockets live in `~/.kuna/ssh`, readable only by you.
 

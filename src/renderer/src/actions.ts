@@ -1,4 +1,5 @@
 import { moveFolderTo, placeAgent } from '@shared/arrange'
+import type { WindowCommand } from '@shared/ipc'
 import { CLEAR_INPUT, compactBlocker, screenState, type ScreenState } from '@shared/input'
 import { gridRows, neighbor, type Direction } from '@shared/layout'
 import type { AgentRuntime } from '@shared/types'
@@ -97,6 +98,11 @@ export function focusSidebar(): void {
 
 export function openTab(key: string, focus = true): void {
   const s = get()
+  // an agent has one pane across all windows: opening one that is open in another window goes there
+  if (s.windows.elsewhere[key]) {
+    if (focus) void window.kuna.windows.reveal(key)
+    return
+  }
   if (focus) {
     const paneKey = s.zone === 'pane' ? s.tabs[s.paneIndex] : undefined
     cameFrom = paneKey === key ? cameFrom : { key, zone: s.zone === 'pane' ? 'pane' : 'sidebar', sel: s.sel, paneKey }
@@ -158,6 +164,38 @@ export function moveInGrid(dir: Direction): void {
   } else if (target != null) focusPane(target)
   // past the rightmost pane: a hidden right panel slides in, until ← or Esc
   else if (dir === 'right' && !s.settings.inspector) set({ inspectorPeek: true })
+}
+
+// --------------------------------------------------------------- windows --
+
+/** ⌘← ⌘→: the previous / next Kuna window, where it was left. */
+export function stepWindow(dir: -1 | 1): void {
+  void window.kuna.windows.step(dir)
+}
+
+/** ⌥⌘← ⌥⌘→: the focused pane goes to the previous / next window, and the focus with it. */
+export async function carryPane(dir: -1 | 1): Promise<void> {
+  const key = focusedKey()
+  if (key && (await window.kuna.windows.carry(key, dir))) closeTab(key)
+}
+
+/** ⇧⌘N: a new window, starting on the row selected here. */
+export function newWindow(): void {
+  window.kuna.windows.open(get().sel)
+}
+
+/** What the main process asks of this window. */
+export function windowCommand(cmd: WindowCommand): void {
+  const s = get()
+  if (cmd.kind === 'close') {
+    if (s.tabs.includes(cmd.key)) closeTab(cmd.key)
+    return
+  }
+  if (cmd.kind === 'new-window') return newWindow()
+  // the focus came here: in navigate, a draft stays in the launch box
+  if (s.mode === 'insert' && s.zone === 'pane') leaveInsert(false)
+  else if (s.zone === 'prompt') focusSidebar()
+  if (cmd.kind === 'adopt' || cmd.kind === 'focus') openTab(cmd.key)
 }
 
 // ---------------------------------------------------------------- typing --
@@ -351,6 +389,7 @@ export async function killAgent(key: string): Promise<void> {
   if (agent?.kind === 'claude') return stopOrRemoveSession(key)
   const wasFocused = s.zone === 'pane' && s.tabs[s.paneIndex] === key
   if (s.tabs.includes(key)) closeTab(key)
+  if (s.windows.elsewhere[key]) window.kuna.windows.closePane(key)
   // keep the sidebar cursor near where it was
   if (s.sel === `a:${key}`) {
     const nodes = visibleTree()
@@ -381,6 +420,7 @@ async function stopOrRemoveSession(key: string): Promise<void> {
   if (!a) return
   const label = agentTitle(a, s.details[key])
   if (s.tabs.includes(key)) closeTab(key)
+  if (s.windows.elsewhere[key]) window.kuna.windows.closePane(key)
   if (s.sel === `a:${key}`) {
     const nodes = visibleTree()
     const i = nodes.findIndex((n) => n.id === s.sel)
@@ -450,6 +490,7 @@ async function typeIntoAgent(key: string, a: AgentRuntime, text: string): Promis
     // no tab: tmux types it (and clears the input box first)
     return (await window.kuna.agents.send(key, text)).error
   }
+  if (!open && get().windows.elsewhere[key]) return 'It is open in another window; do it from there.'
   if (!open) openTab(key, false)
   else if (!open.ptyId) reattach(key)
   // background sessions take input only through `claude attach`, which can
