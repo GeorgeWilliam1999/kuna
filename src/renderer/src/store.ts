@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { BUILTIN_BACKENDS, type AgentBackend } from '@shared/backends'
 import type {
   AgentDetails,
   AgentRuntime,
@@ -12,7 +13,6 @@ import type {
   SshHostEntry
 } from '@shared/types'
 import { pruneArranged } from '@shared/arrange'
-import { BUILTIN_BACKENDS, type AgentBackend } from '@shared/backends'
 import { REPO_COLORS } from './themes'
 
 export type Zone = 'sidebar' | 'prompt' | 'pane'
